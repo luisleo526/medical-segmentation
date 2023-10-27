@@ -1,0 +1,24 @@
+train:
+  images: /mnt/e/Task08_HepaticVessel/imagesTr/*.nii.gz
+  labels: /mnt/e/Task08_HepaticVessel/labelsTr/*.nii.gz
+test:
+  images: /mnt/e/Task08_HepaticVessel/imagesTs/*.nii.gz
+
+in_channels: 1
+
+targets:
+  - index: 0
+    name: Background
+  - index: 1
+    name: Vessel
+  - index: 2
+    name: Tumour
+
+patch_size: [ 192, 192, 64 ]
+spacing: [ 0.8, 0.8, 1.0 ]
+clip_values: [ -10, 243 ]
+normalize_values: [ 104.37, 52.62 ]
+
+num_samples: 4
+neg_sample_num: 1
+pos_sample_num: 1

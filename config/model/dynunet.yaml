@@ -1,0 +1,15 @@
+batch_size:
+  train: 1
+  val: 1
+  test: 1
+
+
+network:
+  type: model.dynunet.SegNet
+  params:
+    norm: SYNCBATCH
+    res_block: true
+    trans_bias: true
+    deep_supr_num: 3
+    deep_supervision: True
+    dropout: 0.0
