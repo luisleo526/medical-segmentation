@@ -1,0 +1,16 @@
+defaults:
+  - data: task8.yaml
+  - model: dynunet.yaml
+  - _self_
+
+name: medical_decathlon_task8
+num_workers: 8
+num_epochs: 3000
+
+debug: False
+track: True
+val_freq: 5
+test_freq: 5
+
+self_training: False
+

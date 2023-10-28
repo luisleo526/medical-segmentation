@@ -51,11 +51,12 @@ class SegNet(torch.nn.Module):
     def compute_loss(self, y_pred, y_true):
         pred = torch.unbind(y_pred, dim=1)
         loss = sum([0.5 ** i * self.loss_fn(p, y_true) for i, p in enumerate(pred)])
-        return loss, pred[0]
+        return loss
 
     def forward(self, x, y=None):
         if type(x) is dict:
-            return self.compute_loss(self.model(x['image']), x['label'])
+            pred = self.model(x['image'])
+            return pred[0], self.compute_loss(pred, x['label'])
         elif torch.is_tensor(x):
             if torch.is_tensor(y):
                 return self.loss_fn(x, y)

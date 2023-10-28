@@ -15,20 +15,16 @@ def load_datalist(cfg, process_id, num_process):
     assert len(images_ts) > 0, "No test images found"
     assert len(images_tr) == len(labels_tr), "Number of images and labels must be the same"
 
-    print(len( images_tr), len(images_ts), len(labels_tr))
-
     images_tr = sorted(images_tr)
     images_ts = sorted(images_ts)
 
     num_of_train = int(len(images_tr) * 0.8)
 
-    images_tr = images_tr[:num_of_train]
-    images_val = images_tr[num_of_train:]
+    images_tr, images_val = images_tr[:num_of_train], images_tr[num_of_train:]
 
-    if num_process > 1:
-        images_tr = partition_dataset(images_tr, num_partitions=num_process, even_divisible=True)[process_id]
-        images_val = partition_dataset(images_val, num_partitions=num_process, even_divisible=True)[process_id]
-        images_ts = partition_dataset(images_ts, num_partitions=num_process, even_divisible=True)[process_id]
+    images_tr = partition_dataset(images_tr, num_partitions=num_process, even_divisible=True)[process_id]
+    images_val = partition_dataset(images_val, num_partitions=num_process, even_divisible=True)[process_id]
+    images_ts = partition_dataset(images_ts, num_partitions=num_process, even_divisible=True)[process_id]
 
     datalist = {'train': [], 'val': [], 'test': []}
 

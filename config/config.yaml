@@ -1,5 +1,0 @@
-debug: False
-num_workers: 8
-defaults:
-  - data: task8.yaml
-  - model: dynunet.yaml
