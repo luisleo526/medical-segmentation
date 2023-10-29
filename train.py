@@ -35,10 +35,11 @@ def main(cfg: DictConfig) -> None:
     if cfg.track:
         accelerator.init_trackers(cfg.name,
                                   init_kwargs={"wandb": {"config": OmegaConf.to_container(cfg, resolve=True)}})
-        tracker: Union[WandBTracker, GeneralTracker] = accelerator.get_tracker('wandb')
-        tracker.tracker.define_metric("dice*", summary="max")
-        tracker.tracker.define_metric("iou*", summary="max")
-        tracker.tracker.define_metric("loss", summary="min")
+        if accelerator.is_main_process:
+            tracker: Union[WandBTracker, GeneralTracker] = accelerator.get_tracker('wandb')
+            tracker.tracker.define_metric("dice*", summary="max")
+            tracker.tracker.define_metric("iou*", summary="max")
+            tracker.tracker.define_metric("loss", summary="min")
 
     datalist = load_datalist(cfg, accelerator.process_index, accelerator.num_processes)
 
