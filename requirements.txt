@@ -1,0 +1,7 @@
+torch
+torchvision
+hydra-core
+monai[all]
+accelerate
+tqdm
+wandb
