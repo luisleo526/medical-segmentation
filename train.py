@@ -1,29 +1,44 @@
 import random
+from typing import Union
 
 import hydra
 import torch
-from accelerate import Accelerator
+from accelerate.tracking import WandBTracker, GeneralTracker
 from monai.data import ThreadDataLoader, CacheDataset
 from monai.inferers import sliding_window_inference
-from monai.metrics import DiceMetric, CumulativeAverage
+from monai.metrics import CumulativeAverage
 from omegaconf import DictConfig, OmegaConf
 from tqdm import trange
 
+from accelerator import MedicalAccelerator
 from dataset import load_datalist, get_transforms
 from utils import get_class, to_wandb_images
 
 
+def aggregate_metrics(split, metrics, targets):
+    results = {}
+    for key, metric in metrics.items():
+        scores = metric.aggregate()
+        if key == 'loss':
+            results[f"{key}/{split}"] = float(scores)
+        else:
+            results.update({f"{key}-{targets[idx]}/{split}": v for idx, v in enumerate(scores)})
+        metric.reset()
+    return results
+
+
 @hydra.main(config_path="config", config_name="train", version_base="1.3")
 def main(cfg: DictConfig) -> None:
-    accelerator = Accelerator(gradient_accumulation_steps=cfg.model.accumulation_steps, log_with="wandb")
+    accelerator = MedicalAccelerator(gradient_accumulation_steps=cfg.model.accumulation_steps,
+                                     log_with="wandb" if cfg.track else None, )
 
     if cfg.track:
         accelerator.init_trackers(cfg.name,
                                   init_kwargs={"wandb": {"config": OmegaConf.to_container(cfg, resolve=True)}})
-        tracker = accelerator.get_tracker('wandb', unwrap=True)
-        tracker.define_metric("dice*", summary="max")
-        tracker.define_metric("iou*", summary="max")
-        tracker.define_metric("loss", summary="min")
+        tracker: Union[WandBTracker, GeneralTracker] = accelerator.get_tracker('wandb')
+        tracker.tracker.define_metric("dice*", summary="max")
+        tracker.tracker.define_metric("iou*", summary="max")
+        tracker.tracker.define_metric("loss", summary="min")
 
     datalist = load_datalist(cfg, accelerator.process_index, accelerator.num_processes)
 
@@ -45,8 +60,8 @@ def main(cfg: DictConfig) -> None:
     scheduler = get_class(cfg.model.scheduler.type)(optim, **cfg.model.scheduler.params)
     model, optim, scheduler = accelerator.prepare(model, optim, scheduler, device_placement=[True, True, True])
 
-    dice_metric = DiceMetric(reduction='mean_batch', num_classes=len(cfg.data.targets))
-    loss_cumulative = CumulativeAverage()
+    metrics = {k: CumulativeAverage() for k in ['dice', 'iou', 'loss']}
+    targets = cfg.data.targets
 
     total_steps = len(dataloaders['train']) * cfg.num_epochs + len(dataloaders['val']) * cfg.num_epochs // cfg.val_freq
     if cfg.self_training:
@@ -68,17 +83,12 @@ def main(cfg: DictConfig) -> None:
                 optim.step()
                 scheduler.step()
                 optim.zero_grad()
-                loss_cumulative.append(loss.detach())
 
-            dice_metric(pred.argmax(1, keepdim=True), batch['label'])
+                accelerator.compute_metrics(pred.argmax(1, keepdim=True), batch['label'], loss, metrics, targets)
+
             pbar.update(1)
 
-        accelerator.wait_for_everyone()
-        results.update(
-            {f"dice-{cfg.data.targets[idx]}/train": score for idx, score in enumerate(dice_metric.aggregate())})
-        results.update({'loss/train': loss_cumulative.aggregate().item()})
-        dice_metric.reset()
-        loss_cumulative.reset()
+        results.update(aggregate_metrics('train', metrics, targets))
 
         ############################################################################################
         pbar.set_description("Validating")
@@ -91,20 +101,14 @@ def main(cfg: DictConfig) -> None:
                                                 sw_batch_size=cfg.model.batch_size['val'],
                                                 predictor=model, overlap=0.7)
                 loss = model(pred, batch['label'])
-                loss_cumulative.append(loss.detach())
 
-            dice_metric(pred.argmax(1, keepdim=True), batch['label'])
-            accelerator.print(dice_metric.get_buffer())
+                accelerator.compute_metrics(pred.argmax(1, keepdim=True), batch['label'], loss, metrics, targets)
+
             if batch_id == target_batch and accelerator.is_main_process and cfg.track:
                 results.update(to_wandb_images(pred.argmax(1, keepdim=True), batch, cfg.data.targets))
             pbar.update(1)
 
-        accelerator.wait_for_everyone()
-        results.update(
-            {f"dice-{cfg.data.targets[idx]}/val": score for idx, score in enumerate(dice_metric.aggregate())})
-        results.update({'loss/val': loss_cumulative.aggregate().item()})
-        dice_metric.reset()
-        loss_cumulative.reset()
+        results.update(aggregate_metrics('val', metrics, targets))
 
         ############################################################################################
 

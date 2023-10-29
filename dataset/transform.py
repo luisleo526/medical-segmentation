@@ -40,7 +40,7 @@ def get_transforms(mode, cfg):
     # 2. sampling
     sample_transforms = [
         Spacingd(keys=keys, pixdim=cfg.data.spacing, mode=spacing_mode, align_corners=spacing_ac),
-        CropForegroundd(keys=keys, source_key="image"),
+        CropForegroundd(keys=keys, source_key="image", allow_smaller=False),
         NormalizeIntensityd(keys="image",
                             subtrahend=cfg.data.normalize_values[0],
                             divisor=cfg.data.normalize_values[1]),

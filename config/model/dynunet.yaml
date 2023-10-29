@@ -7,7 +7,7 @@ batch_size:
 network:
   type: model.dynunet.SegNet
   params:
-    norm_name: SYNCBATCH
+    norm_name: BATCH
     res_block: true
     trans_bias: true
     deep_supr_num: 3

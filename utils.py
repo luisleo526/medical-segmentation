@@ -1,9 +1,8 @@
 import random
-import re
 from importlib import import_module
 
 import torch
-from monai.metrics import compute_iou
+from monai.metrics import compute_iou, compute_generalized_dice
 
 import wandb
 
@@ -12,35 +11,6 @@ def get_class(x):
     module = x[:x.rfind(".")]
     obj = x[x.rfind(".") + 1:]
     return getattr(import_module(module), obj)
-
-
-def compute_metrics(y_pred, y_true, metrics):
-    for k, metric in metrics.items():
-        s = re.search(r'\d', k)
-        if bool(s):
-            idx = int(s.group())
-            result = compute_iou(y_pred == idx, y_true == idx).view(-1)
-            result = torch.nan_to_num(result)
-            metric.append(result)
-        else:
-            metric(y_pred, y_true)
-
-
-def aggregate_metrics(metrics, targets, split):
-    results = {}
-    for k, metric in metrics.items():
-        scores = metric.aggregate()
-        if torch.is_tensor(scores):
-            scores = scores.cpu().numpy()
-        if 'dice' in k:
-            for idx, score in enumerate(scores):
-                results[f"{k}-{targets[idx]}/{split}"] = score
-        else:
-            idx = re.search(r'\d', k).group()
-            digits = len(idx) + 1
-            results[f"{k[:-digits]}-{targets[int(idx)]}/{split}"] = scores
-        metric.reset()
-    return results
 
 
 def extract_elements(lst, m):
@@ -70,3 +40,13 @@ def to_wandb_images(y_pred, batch, targets):
                                          "prediction": {"mask_data": p_label, "class_labels": class_labels}}))
 
     return {'images': images}
+
+
+def dice_score(y_pred, y_truth, num_classes):
+    return torch.nan_to_num(
+        torch.stack([compute_generalized_dice(y_pred == idx, y_truth == idx) for idx in range(num_classes)], dim=-1))
+
+
+def iou_score(y_pred, y_truth, num_classes):
+    return torch.nan_to_num(
+        torch.cat([compute_iou(y_pred == idx, y_truth == idx, False) for idx in range(num_classes)], dim=-1))
