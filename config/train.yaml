@@ -10,7 +10,14 @@ num_epochs: 3000
 debug: False
 track: True
 val_freq: 5
-test_freq: 5
+
+save_freq: 1
+save_dir: ./ckpt
+save_tag: first_try
+
+load: False
+load_tag: first_try
 
 self_training: False
+refresh_freq: 5
 

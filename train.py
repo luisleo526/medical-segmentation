@@ -3,6 +3,7 @@ from typing import Union
 
 import hydra
 import torch
+from accelerate import Accelerator
 from accelerate.tracking import WandBTracker, GeneralTracker
 from monai.data import ThreadDataLoader, CacheDataset
 from monai.inferers import sliding_window_inference
@@ -10,9 +11,17 @@ from monai.metrics import CumulativeAverage
 from omegaconf import DictConfig, OmegaConf
 from tqdm import trange
 
-from accelerator import MedicalAccelerator
 from dataset import load_datalist, get_transforms
-from utils import get_class, to_wandb_images
+from utils import get_class, to_wandb_images, dice_score, iou_score
+
+
+def compute_metrics(y_pred, y_true, loss, metrics, targets):
+    dice = dice_score(y_pred, y_true, len(targets))
+    iou = iou_score(y_pred, y_true, len(targets))
+
+    metrics['loss'].append(loss.detach())
+    metrics['dice'].append(dice.mean(dim=0))
+    metrics['iou'].append(iou.mean(dim=0))
 
 
 def aggregate_metrics(split, metrics, targets):
@@ -29,8 +38,8 @@ def aggregate_metrics(split, metrics, targets):
 
 @hydra.main(config_path="config", config_name="train", version_base="1.3")
 def main(cfg: DictConfig) -> None:
-    accelerator = MedicalAccelerator(gradient_accumulation_steps=cfg.model.accumulation_steps,
-                                     log_with="wandb" if cfg.track else None, )
+    accelerator = Accelerator(gradient_accumulation_steps=cfg.model.accumulation_steps,
+                              log_with="wandb" if cfg.track else None, )
 
     if cfg.track:
         accelerator.init_trackers(cfg.name,
@@ -46,6 +55,11 @@ def main(cfg: DictConfig) -> None:
     if not cfg.self_training:
         del datalist['test']
 
+    model = get_class(cfg.model.network.type)(cfg)
+    if cfg.load:
+        model.load_state_dict(torch.load(f"{cfg.save_dir}/{cfg.name}/{cfg.load_tag}/pytorch_model.bin"))
+        accelerator.print(f"Ckeckpoint {cfg.save_dir}/{cfg.name}/{cfg.load_tag} loaded")
+
     datasets = {k: CacheDataset(data=v if not cfg.debug else v[:2], transform=get_transforms(k, cfg))
                 for k, v in datalist.items()}
 
@@ -56,7 +70,6 @@ def main(cfg: DictConfig) -> None:
     dataloaders = {k: accelerator.prepare(dataloader, device_placement=[True])
                    for k, dataloader in dataloaders.items()}
 
-    model = get_class(cfg.model.network.type)(cfg)
     optim = get_class(cfg.model.optimizer.type)(model.parameters(), **cfg.model.optimizer.params)
     scheduler = get_class(cfg.model.scheduler.type)(optim, **cfg.model.scheduler.params)
     model, optim, scheduler = accelerator.prepare(model, optim, scheduler, device_placement=[True, True, True])
@@ -85,7 +98,7 @@ def main(cfg: DictConfig) -> None:
                 scheduler.step()
                 optim.zero_grad()
 
-                accelerator.compute_metrics(pred.argmax(1, keepdim=True), batch['label'], loss, metrics, targets)
+                compute_metrics(pred.argmax(1, keepdim=True), batch['label'], loss, metrics, targets)
 
             pbar.update(1)
 
@@ -95,21 +108,22 @@ def main(cfg: DictConfig) -> None:
         pbar.set_description("Validating")
         target_batch = random.randint(0, len(dataloaders['val']) - 1)
 
-        model.eval()
-        for batch_id, batch in enumerate(dataloaders['val'] if epoch % cfg.val_freq == 0 else []):
-            with torch.no_grad():
-                pred = sliding_window_inference(inputs=batch['image'], roi_size=cfg.data.patch_size,
-                                                sw_batch_size=cfg.model.batch_size['val'],
-                                                predictor=model, overlap=0.7)
-                loss = model(pred, batch['label'])
+        if epoch % cfg.val_freq == 0:
+            model.eval()
+            for batch_id, batch in enumerate(dataloaders['val']):
+                with torch.no_grad():
+                    pred = sliding_window_inference(inputs=batch['image'], roi_size=cfg.data.patch_size,
+                                                    sw_batch_size=cfg.model.batch_size['val'],
+                                                    predictor=model, overlap=0.7)
+                    loss = model(pred, batch['label'])
 
-                accelerator.compute_metrics(pred.argmax(1, keepdim=True), batch['label'], loss, metrics, targets)
+                    compute_metrics(pred.argmax(1, keepdim=True), batch['label'], loss, metrics, targets)
 
-            if batch_id == target_batch and accelerator.is_main_process and cfg.track:
-                results.update(to_wandb_images(pred.argmax(1, keepdim=True), batch, cfg.data.targets))
-            pbar.update(1)
+                if batch_id == target_batch and accelerator.is_main_process and cfg.track:
+                    results.update(to_wandb_images(pred.argmax(1, keepdim=True), batch, cfg.data.targets))
+                pbar.update(1)
 
-        results.update(aggregate_metrics('val', metrics, targets))
+            results.update(aggregate_metrics('val', metrics, targets))
 
         ############################################################################################
 
@@ -118,6 +132,11 @@ def main(cfg: DictConfig) -> None:
 
         if cfg.debug and epoch > 10:
             break
+
+        if epoch % cfg.save_freq == 0:
+            accelerator.save_model(model, f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}")
+            # accelerator.save(accelerator.unwrap_model(model).state_dict(),
+            #                  f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}/pytorch_model.bin")
 
     accelerator.end_training()
 
