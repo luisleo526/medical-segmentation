@@ -5,6 +5,12 @@ from monai.data.utils import partition_dataset
 
 
 def load_datalist(cfg, process_id, num_process):
+    root = cfg.data.root
+
+    cfg.data.train.images = str(Path(root) / Path(cfg.data.train.images))
+    cfg.data.train.labels = str(Path(root) / Path(cfg.data.train.labels))
+    cfg.data.test.images = str(Path(root) / Path(cfg.data.test.images))
+
     images_tr = glob(cfg.data.train.images)
     images_ts = glob(cfg.data.test.images)
 

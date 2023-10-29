@@ -1,8 +1,10 @@
+root: /mnt/e/Task08_HepaticVessel
+
 train:
-  images: /mnt/e/Task08_HepaticVessel/imagesTr/*.nii.gz
-  labels: /mnt/e/Task08_HepaticVessel/labelsTr/*.nii.gz
+  images: imagesTr/*.nii.gz
+  labels: labelsTr/*.nii.gz
 test:
-  images: /mnt/e/Task08_HepaticVessel/imagesTs/*.nii.gz
+  images: imagesTs/*.nii.gz
 
 in_channels: 1
 
