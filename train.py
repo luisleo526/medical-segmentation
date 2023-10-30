@@ -60,7 +60,7 @@ def main(cfg: DictConfig) -> None:
         model.load_state_dict(torch.load(f"{cfg.save_dir}/{cfg.name}/{cfg.load_tag}/pytorch_model.bin"))
         accelerator.print(f"Ckeckpoint {cfg.save_dir}/{cfg.name}/{cfg.load_tag} loaded")
 
-    datasets = {k: CacheDataset(data=v if not cfg.debug else v[:2], transform=get_transforms(k, cfg))
+    datasets = {k: CacheDataset(data=v if not cfg.debug else v[:5], transform=get_transforms(k, cfg))
                 for k, v in datalist.items()}
 
     dataloaders = {k: ThreadDataLoader(v, batch_size=cfg.model.batch_size[k] if k == 'train' else 1,
@@ -79,9 +79,9 @@ def main(cfg: DictConfig) -> None:
 
     total_steps = len(dataloaders['train']) * cfg.num_epochs + len(dataloaders['val']) * cfg.num_epochs // cfg.val_freq
     if cfg.self_training:
-        total_steps += len(dataloaders['test']) * cfg.num_epochs // cfg.test_freq
+        total_steps += len(dataloaders['test']) * cfg.num_epochs // cfg.refresh_freq
 
-    pbar = trange(total_steps * cfg.num_epochs, disable=not accelerator.is_main_process)
+    pbar = trange(total_steps, disable=not accelerator.is_main_process)
     for epoch in range(cfg.num_epochs):
 
         results = {}
@@ -135,8 +135,6 @@ def main(cfg: DictConfig) -> None:
 
         if epoch % cfg.save_freq == 0:
             accelerator.save_model(model, f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}")
-            # accelerator.save(accelerator.unwrap_model(model).state_dict(),
-            #                  f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}/pytorch_model.bin")
 
     accelerator.end_training()
 
