@@ -46,7 +46,7 @@ class SegNet(torch.nn.Module):
             upsample_kernel_size=strides[1:],
             **cfg.model.network.params
         )
-        self.loss_fn = DiceCELoss(include_background=False, softmax=True, reduction='sum', to_onehot_y=True)
+        self.loss_fn = DiceCELoss(include_background=False, softmax=True, reduction='mean', to_onehot_y=True)
 
     def compute_loss(self, y_pred, y_true):
         pred = torch.unbind(y_pred, dim=1)

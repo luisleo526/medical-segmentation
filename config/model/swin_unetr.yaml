@@ -5,14 +5,13 @@ batch_size:
   test: 1
 
 network:
-  type: model.dynunet.SegNet
+  type: model.swin_unetr.SegNet
+  load_head: True
   params:
-    norm_name: INSTANCE
-    res_block: false
-    trans_bias: false
-    deep_supr_num: 3
-    deep_supervision: True
-    dropout: 0.0
+    depths: [ 2, 2, 2, 2 ]
+    num_heads: [ 3, 6, 12, 24 ]
+    feature_size: 48
+
 
 optimizer:
   type: torch.optim.AdamW
