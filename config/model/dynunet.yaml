@@ -15,14 +15,15 @@ network:
     dropout: 0.0
 
 optimizer:
-  type: torch.optim.AdamW
+  type: torch.optim.SGD
   params:
     lr: 3.0e-4
-    weight_decay: 1.0e-5
+    momentum: 0.99,
+    weight_decay: 3e-5,
+    nesterov: True,
 
 scheduler:
   type: torch.optim.lr_scheduler.CyclicLR
   params:
     base_lr: 3.0e-6
-    max_lr: 5.0e-4
-    cycle_momentum: False
+    max_lr: 3.0e-4
