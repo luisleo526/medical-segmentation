@@ -48,7 +48,7 @@ def main(cfg: DictConfig) -> None:
             tracker: Union[WandBTracker, GeneralTracker] = accelerator.get_tracker('wandb')
             tracker.tracker.define_metric("dice*", summary="max")
             tracker.tracker.define_metric("iou*", summary="max")
-            tracker.tracker.define_metric("loss", summary="min")
+            tracker.tracker.define_metric("loss*", summary="min")
 
     datalist = load_datalist(cfg, accelerator.process_index, accelerator.num_processes)
 
