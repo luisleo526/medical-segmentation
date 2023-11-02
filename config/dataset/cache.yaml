@@ -1,0 +1,4 @@
+type: monai.data.CacheDataset
+params:
+  num_workers: 8
+  runtime_cache: True

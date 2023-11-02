@@ -60,11 +60,15 @@ def main(cfg: DictConfig) -> None:
         model.load_state_dict(torch.load(f"{cfg.save_dir}/{cfg.name}/{cfg.load_tag}/pytorch_model.bin"))
         accelerator.print(f"Ckeckpoint {cfg.save_dir}/{cfg.name}/{cfg.load_tag} loaded")
 
-    datasets = {k: CacheDataset(data=v if not cfg.debug else v[:5], transform=get_transforms(k, cfg))
-                for k, v in datalist.items()}
+    dataset_class = get_class(cfg.dataset.type)
+    datasets = {
+        k: dataset_class(data=v if not cfg.debug else v[:5],
+                         transform=get_transforms(k, cfg, accelerator.device), **cfg.dataset.params)
+        for k, v in datalist.items()
+    }
 
     dataloaders = {k: ThreadDataLoader(v, batch_size=cfg.model.batch_size[k] if k == 'train' else 1,
-                                       num_workers=cfg.num_workers, use_thread_workers=True, pin_memory=True)
+                                       use_thread_workers=True, buffer_size=cfg.buffer_size)
                    for k, v in datasets.items()}
 
     dataloaders = {k: accelerator.prepare(dataloader, device_placement=[True])
@@ -128,6 +132,8 @@ def main(cfg: DictConfig) -> None:
         ############################################################################################
 
         if cfg.track:
+            for key in [x for x in results.keys() if cfg.data.targets[0] in x]:
+                del results[key]
             accelerator.log(results)
 
         if cfg.debug and epoch > 10:

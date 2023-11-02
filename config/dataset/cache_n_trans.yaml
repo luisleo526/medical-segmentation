@@ -1,0 +1,4 @@
+type: monai.data.CacheNTransDataset
+params:
+  cache_n_trans: 12
+  cache_dir: cache/n_trans

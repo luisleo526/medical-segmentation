@@ -1,0 +1,3 @@
+type: monai.data.PersistentDataset
+params:
+  cache_dir: cache/persistent
