@@ -5,14 +5,14 @@ import hydra
 import torch
 from accelerate import Accelerator
 from accelerate.tracking import WandBTracker, GeneralTracker
-from monai.data import ThreadDataLoader, CacheDataset
+from monai.data import ThreadDataLoader
 from monai.inferers import sliding_window_inference
 from monai.metrics import CumulativeAverage
 from omegaconf import DictConfig, OmegaConf
 from tqdm import trange
 
 from dataset import load_datalist, get_transforms
-from utils import get_class, to_wandb_images, dice_score, iou_score
+from utils import initiate, to_wandb_images, dice_score, iou_score, get_class
 
 
 def compute_metrics(y_pred, y_true, loss, metrics, targets):
@@ -55,7 +55,7 @@ def main(cfg: DictConfig) -> None:
     if not cfg.self_training:
         del datalist['test']
 
-    model = get_class(cfg.model.network.type)(cfg)
+    model = initiate(cfg.model.network, cfg=cfg)
     if cfg.load:
         model.load_state_dict(torch.load(f"{cfg.save_dir}/{cfg.name}/{cfg.load_tag}/pytorch_model.bin"))
         accelerator.print(f"Ckeckpoint {cfg.save_dir}/{cfg.name}/{cfg.load_tag} loaded")
@@ -74,8 +74,8 @@ def main(cfg: DictConfig) -> None:
     dataloaders = {k: accelerator.prepare(dataloader, device_placement=[True])
                    for k, dataloader in dataloaders.items()}
 
-    optim = get_class(cfg.model.optimizer.type)(model.parameters(), **cfg.model.optimizer.params)
-    scheduler = get_class(cfg.model.scheduler.type)(optim, **cfg.model.scheduler.params)
+    optim = initiate(cfg.model.optimizer, params=model.parameters())
+    scheduler = initiate(cfg.model.scheduler, optimizer=optim)
     model, optim, scheduler = accelerator.prepare(model, optim, scheduler, device_placement=[True, True, True])
 
     metrics = {k: CumulativeAverage() for k in ['dice', 'iou', 'loss']}
@@ -110,7 +110,7 @@ def main(cfg: DictConfig) -> None:
 
         ############################################################################################
         pbar.set_description("Validating")
-        target_batch = random.randint(0, len(dataloaders['val']) - 1)
+        vis_batch = random.randint(0, len(dataloaders['val']) - 1)
 
         if epoch % cfg.val_freq == 0:
             model.eval()
@@ -123,7 +123,7 @@ def main(cfg: DictConfig) -> None:
 
                     compute_metrics(pred.argmax(1, keepdim=True), batch['label'], loss, metrics, targets)
 
-                if batch_id == target_batch and accelerator.is_main_process and cfg.track:
+                if batch_id == vis_batch and accelerator.is_main_process and cfg.track:
                     results.update(to_wandb_images(pred.argmax(1, keepdim=True), batch, cfg.data.targets))
                 pbar.update(1)
 

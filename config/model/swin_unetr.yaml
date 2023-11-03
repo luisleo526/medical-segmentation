@@ -5,7 +5,7 @@ batch_size:
   test: 1
 
 network:
-  type: model.swin_unetr.SegNet
+  type: model.SwinUNETR
   load_head: True
   params:
     depths: [ 2, 2, 2, 2 ]

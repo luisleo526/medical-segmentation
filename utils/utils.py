@@ -2,15 +2,27 @@ import random
 from importlib import import_module
 
 import torch
-from monai.metrics import compute_iou, compute_generalized_dice
-
 import wandb
+from monai.metrics import compute_iou, compute_generalized_dice
+from omegaconf.dictconfig import DictConfig
 
 
 def get_class(x):
     module = x[:x.rfind(".")]
     obj = x[x.rfind(".") + 1:]
     return getattr(import_module(module), obj)
+
+
+def initiate(info, **kwargs):
+    class_type = get_class(info.type)
+    class_params = {**kwargs}
+    for param_name in info.params:
+        param = info.params[param_name]
+        if type(param) is DictConfig:
+            class_params.update({param_name: initiate(param)})
+        else:
+            class_params.update({param_name: param})
+    return class_type(**class_params)
 
 
 def extract_elements(lst, m):

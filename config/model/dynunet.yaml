@@ -5,7 +5,7 @@ batch_size:
   test: 1
 
 network:
-  type: model.dynunet.SegNet
+  type: model.DynUNet
   params:
     norm_name: INSTANCE
     res_block: false
