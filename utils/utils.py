@@ -13,15 +13,16 @@ def get_class(x):
     return getattr(import_module(module), obj)
 
 
-def initiate(info, **kwargs):
+def initiate(info, skip=False, **kwargs):
     class_type = get_class(info.type)
     class_params = {**kwargs}
-    for param_name in info.params:
-        param = info.params[param_name]
-        if type(param) is DictConfig:
-            class_params.update({param_name: initiate(param)})
-        else:
-            class_params.update({param_name: param})
+    if not skip:
+        for param_name in info.params:
+            param = info.params[param_name]
+            if type(param) is DictConfig:
+                class_params.update({param_name: initiate(param)})
+            else:
+                class_params.update({param_name: param})
     return class_type(**class_params)
 
 

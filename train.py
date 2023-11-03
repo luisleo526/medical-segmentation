@@ -55,7 +55,7 @@ def main(cfg: DictConfig) -> None:
     if not cfg.self_training:
         del datalist['test']
 
-    model = initiate(cfg.model.network, cfg=cfg)
+    model = initiate(cfg.model.network, cfg=cfg, skip=True)
     if cfg.load:
         model.load_state_dict(torch.load(f"{cfg.save_dir}/{cfg.name}/{cfg.load_tag}/pytorch_model.bin"))
         accelerator.print(f"Ckeckpoint {cfg.save_dir}/{cfg.name}/{cfg.load_tag} loaded")
