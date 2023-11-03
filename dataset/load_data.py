@@ -4,7 +4,7 @@ from pathlib import Path
 from monai.data.utils import partition_dataset
 
 
-def load_datalist(cfg, process_id, num_process):
+def load_datalist(cfg):
     root = cfg.data.root
 
     cfg.data.train.images = str(Path(root) / Path(cfg.data.train.images))
@@ -25,12 +25,7 @@ def load_datalist(cfg, process_id, num_process):
     images_ts = sorted(images_ts)
 
     num_of_train = int(len(images_tr) * 0.8)
-
     images_tr, images_val = images_tr[:num_of_train], images_tr[num_of_train:]
-
-    images_tr = partition_dataset(images_tr, num_partitions=num_process, even_divisible=True)[process_id]
-    images_val = partition_dataset(images_val, num_partitions=num_process, even_divisible=True)[process_id]
-    images_ts = partition_dataset(images_ts, num_partitions=num_process, even_divisible=True)[process_id]
 
     datalist = {'train': [], 'val': [], 'test': []}
 

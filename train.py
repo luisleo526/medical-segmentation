@@ -50,7 +50,7 @@ def main(cfg: DictConfig) -> None:
             tracker.tracker.define_metric("iou*", summary="max")
             tracker.tracker.define_metric("loss*", summary="min")
 
-    datalist = load_datalist(cfg, accelerator.process_index, accelerator.num_processes)
+    datalist = load_datalist(cfg)
 
     if not cfg.self_training:
         del datalist['test']
