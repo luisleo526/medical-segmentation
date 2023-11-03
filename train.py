@@ -55,6 +55,9 @@ def main(cfg: DictConfig) -> None:
     if not cfg.self_training:
         del datalist['test']
 
+    for split, data in datalist.items():
+        accelerator.print(f"{split} has {len(data)} samples")
+
     model = initiate(cfg.model.network, cfg=cfg, skip=True)
     if cfg.load:
         model.load_state_dict(torch.load(f"{cfg.save_dir}/{cfg.name}/{cfg.load_tag}/pytorch_model.bin"))
