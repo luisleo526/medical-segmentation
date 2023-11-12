@@ -5,7 +5,7 @@ defaults:
   - _self_
 
 name: medical_decathlon_task8
-num_epochs: 3000
+num_epochs: 2000
 buffer_size: 4
 
 debug: False

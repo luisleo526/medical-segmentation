@@ -18,6 +18,6 @@ spacing: [ 0.8, 0.8, 1.5 ]
 clip_values: [ -10, 243 ]
 normalize_values: [ 104.37, 52.62 ]
 
-num_samples: 4
+num_samples: 1
 neg_sample_num: 1
 pos_sample_num: 1

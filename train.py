@@ -42,8 +42,10 @@ def main(cfg: DictConfig) -> None:
                               log_with="wandb" if cfg.track else None, )
 
     if cfg.track:
-        accelerator.init_trackers(cfg.name,
-                                  init_kwargs={"wandb": {"config": OmegaConf.to_container(cfg, resolve=True)}})
+        config = OmegaConf.to_container(cfg, resolve=True)
+        config['equivalent_batch_size'] = config['model']['batch_size']['train'] * accelerator.num_processes * \
+                                          cfg.model.accumulation_steps
+        accelerator.init_trackers(cfg.name, init_kwargs={"wandb": {"config": config}})
         if accelerator.is_main_process:
             tracker: Union[WandBTracker, GeneralTracker] = accelerator.get_tracker('wandb')
             tracker.tracker.define_metric("dice*", summary="max")
