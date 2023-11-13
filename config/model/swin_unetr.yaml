@@ -15,14 +15,13 @@ network:
 
 
 optimizer:
-  type: torch.optim.AdamW
+  type: torch.optim.Adam
   params:
     lr: 3.0e-4
     weight_decay: 1.0e-5
 
 scheduler:
-  type: torch.optim.lr_scheduler.CyclicLR
+  type: monai.optimizers.WarmupCosineSchedule
   params:
-    base_lr: 3.0e-6
-    max_lr: 5.0e-4
-    cycle_momentum: False
+    warmup_steps: "@WARMUP_STEPS=0.05"
+    t_total: "@TOTAL_STEPS"

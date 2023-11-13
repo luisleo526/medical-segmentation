@@ -1,3 +1,8 @@
+"""
+Special Variable:
+    @WARMUP_STEPS: warmup steps for scheduler
+    @TOTAL_STEPS: total steps for scheduler
+"""
 import random
 from typing import Union
 
@@ -79,6 +84,13 @@ def main(cfg: DictConfig) -> None:
     dataloaders = {k: accelerator.prepare(dataloader, device_placement=[True])
                    for k, dataloader in dataloaders.items()}
 
+    for key, value in cfg.model.scheduler.params.items():
+        if '@WARMUP_STEPS' in value:
+            cfg.model.scheduler.params[key] = int(
+                float(value.replace('@WARMUP_STEPS=', '')) * len(dataloaders['train'])) * cfg.num_epochs
+        elif '@TOTAL_STEPS' in value:
+            cfg.model.scheduler.params[key] = len(dataloaders['train']) * cfg.num_epochs
+
     optim = initiate(cfg.model.optimizer, params=model.parameters())
     scheduler = initiate(cfg.model.scheduler, optimizer=optim)
     model, optim, scheduler = accelerator.prepare(model, optim, scheduler, device_placement=[True, True, True])
@@ -89,6 +101,9 @@ def main(cfg: DictConfig) -> None:
     total_steps = len(dataloaders['train']) * cfg.num_epochs + len(dataloaders['val']) * cfg.num_epochs // cfg.val_freq
     if cfg.self_training:
         total_steps += len(dataloaders['test']) * cfg.num_epochs // cfg.refresh_freq
+
+    print(cfg.model.scheduler)
+    exit(0)
 
     pbar = trange(total_steps, disable=not accelerator.is_main_process)
     for epoch in range(cfg.num_epochs):
