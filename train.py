@@ -102,9 +102,6 @@ def main(cfg: DictConfig) -> None:
     if cfg.self_training:
         total_steps += len(dataloaders['test']) * cfg.num_epochs // cfg.refresh_freq
 
-    print(cfg.model.scheduler)
-    exit(0)
-
     pbar = trange(total_steps, disable=not accelerator.is_main_process)
     for epoch in range(cfg.num_epochs):
 
