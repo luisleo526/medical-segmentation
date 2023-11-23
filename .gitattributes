@@ -1,1 +1,2 @@
 *.pt filter=lfs diff=lfs merge=lfs -text
+ckpt/medical_decathlon_task8 filter=lfs diff=lfs merge=lfs -text
