@@ -166,9 +166,6 @@ def main(cfg: DictConfig) -> None:
                 del results[key]
             accelerator.log(results)
 
-        if cfg.debug and epoch > 10:
-            break
-
         if epoch % cfg.save_freq == 0:
             save_and_upload(accelerator, model, cfg, "latest")
 
@@ -179,6 +176,9 @@ def main(cfg: DictConfig) -> None:
         if current_score > best_dice_sum:
             best_dice_sum = current_score
             save_and_upload(accelerator, model, cfg, "best")
+
+        if cfg.debug and epoch > 10:
+            break
 
     accelerator.end_training()
 
