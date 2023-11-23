@@ -20,6 +20,8 @@ import wandb
 from dataset import load_datalist, get_transforms
 from utils import initiate, to_wandb_images, dice_score, iou_score, get_class
 
+ENTITY = 'luisleo'
+
 
 def compute_metrics(y_pred, y_true, loss, metrics, targets):
     dice = dice_score(y_pred, y_true, len(targets))
@@ -45,12 +47,19 @@ def aggregate_metrics(split, metrics, targets):
 def save_and_upload(accelerator: Accelerator, model, cfg, tag):
     if accelerator.is_main_process:
         accelerator.save_model(model, f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}-{tag}")
-        art = wandb.Artifact(f"{wandb.run.id}-{tag}", type='model', metadata={
-            'task_name': cfg.name,
-            'model_name': cfg.model.network.type,
-            'num_of_classes': len(cfg.data.targets)
-        })
-        art.add_file(f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}-{tag}/pytorch_model.bin")
+        if cfg.track:
+            art = wandb.Artifact(f"{wandb.run.id}-{tag}", type='model', metadata={
+                'task_name': cfg.name,
+                'model_name': cfg.model.network.type,
+                'num_of_classes': len(cfg.data.targets)
+            })
+            art.add_file(f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}-{tag}/pytorch_model.bin")
+
+            tracker: Union[WandBTracker, GeneralTracker] = accelerator.get_tracker('wandb')
+            tracker.tracker.log_artifact(art)
+            if tag == 'best':
+                tracker.tracker.link_artifact(art,
+                                              f"{ENTITY}/model-registry/{cfg.model.network.type.split('.')[-1]}-{cfg.name}")
 
 
 @hydra.main(config_path="config", config_name="train", version_base="1.3")
@@ -97,11 +106,12 @@ def main(cfg: DictConfig) -> None:
                    for k, dataloader in dataloaders.items()}
 
     for key, value in cfg.model.scheduler.params.items():
-        if '@WARMUP_STEPS' in value:
-            cfg.model.scheduler.params[key] = int(
-                float(value.replace('@WARMUP_STEPS=', '')) * len(dataloaders['train'])) * cfg.num_epochs
-        elif '@TOTAL_STEPS' in value:
-            cfg.model.scheduler.params[key] = len(dataloaders['train']) * cfg.num_epochs
+        if isinstance(value, str):
+            if '@WARMUP_STEPS' in value:
+                cfg.model.scheduler.params[key] = int(
+                    float(value.replace('@WARMUP_STEPS=', '')) * len(dataloaders['train'])) * cfg.num_epochs
+            elif '@TOTAL_STEPS' in value:
+                cfg.model.scheduler.params[key] = len(dataloaders['train']) * cfg.num_epochs
 
     optim = initiate(cfg.model.optimizer, params=model.parameters())
     scheduler = initiate(cfg.model.scheduler, optimizer=optim)
@@ -159,6 +169,14 @@ def main(cfg: DictConfig) -> None:
 
             results.update(aggregate_metrics('val', metrics, targets))
 
+            current_score = 0.0
+            for target in cfg.data.targets[1:]:
+                current_score += results[f"dice-{target}/val"]
+
+            if current_score > best_dice_sum:
+                best_dice_sum = current_score
+                save_and_upload(accelerator, model, cfg, "best")
+
         ############################################################################################
 
         if cfg.track:
@@ -168,14 +186,6 @@ def main(cfg: DictConfig) -> None:
 
         if epoch % cfg.save_freq == 0:
             save_and_upload(accelerator, model, cfg, "latest")
-
-        current_score = 0.0
-        for target in cfg.data.targets[1:]:
-            current_score += results[f"dice-{target}/val"]
-
-        if current_score > best_dice_sum:
-            best_dice_sum = current_score
-            save_and_upload(accelerator, model, cfg, "best")
 
         if cfg.debug and epoch > 10:
             break
