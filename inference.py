@@ -55,7 +55,7 @@ if __name__ == '__main__':
         y = np.linspace(0, ny, ny)
         z = np.linspace(0, nz, nz)
 
-        filename = Path(image).stem.split('.')[0] + '.vtk'
+        filename = Path(image).stem.split('.')[0] + '.vtr'
         output_dir = args.output / filename
         grid = RectilinearGrid(str(output_dir), (x, y, z), compression=True)
         grid.addPointData(DataArray(p_label, range(3), 'mask'))
