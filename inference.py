@@ -75,6 +75,8 @@ if __name__ == '__main__':
     transform = get_transforms('test', cfg, torch.device('cuda'))
 
     for image in tqdm(images):
+        instance = Path(image).stem.split('.')[0]
+        Path(args.output / instance).mkdir(exist_ok=True, parents=True)
         image_tensor = transform({'image': image})['image'].unsqueeze(0).cuda()
 
         with torch.no_grad():
@@ -88,15 +90,17 @@ if __name__ == '__main__':
 
             for z in extract_elements(range(start_idx, end_idx + 1), args.samples):
                 img = image_tensor.squeeze(0).squeeze(0).cpu().numpy()[..., z]
-                img = np.stack([img, img, img], axis=-1)
-                lab = p_label[..., z]
                 H, W = img.shape
+                img = np.stack([img, img, img], axis=-1)
+                img = np.uint8(img * 255)
+
+                lab = p_label[..., z]
 
                 img = overlay(img, lab == 1, (255, 0, 0), 0.5)
                 img = overlay(img, lab == 2, (0, 255, 0), 0.5)
 
-                filename = Path(image).stem.split('.')[0] + f"_{z}.png"
-                filename = args.output / filename
+                filename = f"2d_overlap_{z}.png"
+                filename = args.output / instance / filename
                 cv2.imwrite(str(filename), img)
 
         nx, ny, nz = p_label.shape
@@ -105,8 +109,8 @@ if __name__ == '__main__':
         y = np.linspace(0, ny, ny)
         z = np.linspace(0, nz, nz)
 
-        filename = Path(image).stem.split('.')[0] + '.vtr'
-        output_dir = args.output / filename
-        grid = RectilinearGrid(str(output_dir), (x, y, z), compression=True)
+        filename = "3D_mask.vtk"
+        filename = args.output / instance / filename
+        grid = RectilinearGrid(str(filename), (x, y, z), compression=True)
         grid.addPointData(DataArray(p_label, range(3), 'mask'))
         grid.write()
