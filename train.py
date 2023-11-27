@@ -50,16 +50,13 @@ def save_and_upload(accelerator: Accelerator, model, cfg, tag):
         if cfg.track:
             art = wandb.Artifact(f"{wandb.run.id}-{tag}", type='model', metadata={
                 'task_name': cfg.name,
-                'model_name': cfg.model.network.type,
+                'model_config': cfg.model.network,
                 'num_of_classes': len(cfg.data.targets)
             })
             art.add_file(f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}-{tag}/pytorch_model.bin")
 
             tracker: Union[WandBTracker, GeneralTracker] = accelerator.get_tracker('wandb')
             tracker.tracker.log_artifact(art)
-            if tag == 'best':
-                tracker.tracker.link_artifact(art,
-                                              f"{ENTITY}/model-registry/{cfg.model.network.type.split('.')[-1]}-{cfg.name}")
 
 
 @hydra.main(config_path="config", config_name="train", version_base="1.3")
