@@ -11,7 +11,7 @@ from uvw import RectilinearGrid, DataArray
 
 import wandb
 from dataset import get_transforms
-from utils import initiate
+from utils import initiate, extract_elements
 
 
 def parse_args():
@@ -20,6 +20,7 @@ def parse_args():
     parser.add_argument('--data', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--samples', type=int, default=30)
     return parser.parse_args()
 
 
@@ -48,6 +49,15 @@ if __name__ == '__main__':
             pred = sliding_window_inference(inputs=image_tensor, roi_size=cfg.data.patch_size,
                                             sw_batch_size=args.batch_size, predictor=model, overlap=0.7)
             p_label = pred.argmax(1, keepdim=True).squeeze(0).squeeze(0).cpu().numpy()
+
+            uniques = [i for i in range(p_label.shape[-1]) if np.unique(p_label[..., i]).size > 1]
+            start_idx = min(uniques)
+            end_idx = max(uniques)
+
+            # for z in extract_elements(range(start_idx, end_idx + 1), args.samples):
+            #     img = image_tensor.squeeze(0).squeeze(0).cpu().numpy()[..., z]
+            #     H, W = img.shape
+            #     mask =
 
         nx, ny, nz = p_label.shape
 
