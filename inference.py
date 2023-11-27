@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from monai.inferers import sliding_window_inference
+from omegaconf import OmegaConf
 from tqdm import tqdm
 from uvw import RectilinearGrid, DataArray
 
@@ -24,14 +25,14 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    images = glob(args.data / '*.nii.gz')
+    images = glob(str(args.data / '*.nii.gz'))
     args.output.mkdir(exist_ok=True, parents=True)
 
     api = wandb.Api()
 
     artifact = api.artifact(args.artifact, type="model")
     artifact_dir = artifact.download()
-    cfg = artifact.metadata
+    cfg = OmegaConf.create(artifact.metadata)
 
     model = initiate(cfg.model.network, cfg=cfg, skip=True)
     model.load_state_dict(torch.load(artifact_dir + '/pytorch_model.bin'))
@@ -54,8 +55,8 @@ if __name__ == '__main__':
         y = np.linspace(0, ny, ny)
         z = np.linspace(0, nz, nz)
 
-        output_dir = args.output / Path(image).stem
-        output_dir = output_dir.to_string().split('.')[0] + '.vtk'
-        grid = RectilinearGrid(output_dir, (x, y, z), compression=True)
+        filename = Path(image).stem.split('.')[0] + '.vtk'
+        output_dir = args.output / filename
+        grid = RectilinearGrid(str(output_dir), (x, y, z), compression=True)
         grid.addPointData(DataArray(p_label, range(3), 'mask'))
         grid.write()
