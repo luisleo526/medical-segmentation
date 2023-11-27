@@ -48,11 +48,8 @@ def save_and_upload(accelerator: Accelerator, model, cfg, tag):
     if accelerator.is_main_process:
         accelerator.save_model(model, f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}-{tag}")
         if cfg.track:
-            art = wandb.Artifact(f"{wandb.run.id}-{tag}", type='model', metadata={
-                'task_name': cfg.name,
-                'model_config': cfg.model.network,
-                'num_of_classes': len(cfg.data.targets)
-            })
+            art = wandb.Artifact(f"{wandb.run.id}-{tag}", type='model',
+                                 metadata=OmegaConf.to_container(cfg, resolve=True))
             art.add_file(f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}-{tag}/pytorch_model.bin")
 
             tracker: Union[WandBTracker, GeneralTracker] = accelerator.get_tracker('wandb')
