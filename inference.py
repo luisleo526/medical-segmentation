@@ -95,7 +95,7 @@ if __name__ == '__main__':
                 img = overlay(img, lab == 1, (255, 0, 0), 0.5)
                 img = overlay(img, lab == 2, (0, 255, 0), 0.5)
 
-                filename = Path(image).stem.split('.')[0] + '.png'
+                filename = Path(image).stem.split('.')[0] + f"_{z}.png"
                 filename = args.output / filename
                 cv2.imwrite(str(filename), img)
 
