@@ -151,7 +151,7 @@ def main(cfg: DictConfig) -> None:
             for batch_id, batch in enumerate(dataloaders['val']):
                 with torch.no_grad():
                     pred = sliding_window_inference(inputs=batch['image'], roi_size=cfg.data.patch_size,
-                                                    sw_batch_size=cfg.model.batch_size['val'],
+                                                    sw_batch_size=cfg.batch_size['val'],
                                                     predictor=model, overlap=0.7)
                     loss = model(pred, batch['label'])
 
