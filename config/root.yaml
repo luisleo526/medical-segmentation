@@ -1,5 +1,5 @@
 defaults:
-  - data: root
+  - data: task8
   - model: dynunet
   - dataset: cache
   - optimizer: adam
