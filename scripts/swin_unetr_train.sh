@@ -1,5 +1,6 @@
-accelerate launch --num_cpu_threads_per_process 8 train.py \
-data.root=/workspace/dataset/Task08_HepaticVessel model=swin_unetr \
-model.batch_size.train=2 model.batch_size.val=16 model.accumulation_steps=2 \
-model.optimizer.params.lr=3e-4 \
-val_freq=10 save_tag=swin_unetr_task08
+accelerate launch --num_cpu_threads_per_process 16 train.py \
+data.root=/workspace/dataset/Task08_HepaticVessel \
+model=dynunet optimizer=adam scheduler=warmup_cosine \
+optimizer.params.lr=3.0e-4 \
+batch_size.train=2 batch_size.val=16 accumulation_steps=1 \
+val_freq=10 save_tag=dynunet_task08

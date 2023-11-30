@@ -67,7 +67,7 @@ if __name__ == '__main__':
     artifact_dir = artifact.download()
     cfg = OmegaConf.create(artifact.metadata)
 
-    model = initiate(cfg.model.network, cfg=cfg, skip=True)
+    model = initiate(cfg.model, cfg=cfg, skip=True)
     model.load_state_dict(torch.load(artifact_dir + '/pytorch_model.bin'))
     model.cuda()
     model.eval()
@@ -109,7 +109,7 @@ if __name__ == '__main__':
         y = np.linspace(0, ny, ny)
         z = np.linspace(0, nz, nz)
 
-        filename = "3D_mask.vtk"
+        filename = "3D_mask.vtr"
         filename = args.output / instance / filename
         grid = RectilinearGrid(str(filename), (x, y, z), compression=True)
         grid.addPointData(DataArray(p_label, range(3), 'mask'))

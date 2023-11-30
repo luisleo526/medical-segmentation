@@ -1,15 +1,14 @@
 defaults:
-  - data: root.yaml
-  - model: dynunet.yaml
-  - dataset: cache.yaml
-  - optimizer: adam.yaml
-  - scheduler: warmup_cosine.yaml
+  - data: root
+  - model: dynunet
+  - dataset: cache
+  - optimizer: adam
+  - scheduler: warmup_cosine
   - _self_
 
 name: medical_decathlon_task8
 num_epochs: 2000
 buffer_size: 4
-
 accumulation_steps: 1
 
 batch_size:
