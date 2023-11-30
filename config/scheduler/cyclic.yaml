@@ -1,0 +1,4 @@
+type: torch.optim.lr_scheduler.CyclicLR
+params:
+  base_lr: 3.0e-6
+  max_lr: 3.0e-4

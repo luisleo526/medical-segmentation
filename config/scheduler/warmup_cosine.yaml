@@ -1,0 +1,4 @@
+type: monai.optimizer.WarmupCosineSchedule
+params:
+  warmup_steps: "@WARMUP_STEPS=0.05"
+  t_total: "@TOTAL_STEPS"

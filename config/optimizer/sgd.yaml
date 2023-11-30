@@ -1,0 +1,6 @@
+type: torch.optim.SGD
+params:
+  lr: 3.0e-4
+  momentum: 0.99
+  weight_decay: 3e-5
+  nesterov: True

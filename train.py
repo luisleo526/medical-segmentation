@@ -56,15 +56,15 @@ def save_and_upload(accelerator: Accelerator, model, cfg, tag):
             tracker.tracker.log_artifact(art)
 
 
-@hydra.main(config_path="config", config_name="train", version_base="1.3")
+@hydra.main(config_path="config", config_name="root", version_base="1.3")
 def main(cfg: DictConfig) -> None:
-    accelerator = Accelerator(gradient_accumulation_steps=cfg.model.accumulation_steps,
+    accelerator = Accelerator(gradient_accumulation_steps=cfg.accumulation_steps,
                               log_with="wandb" if cfg.track else None, )
 
     if cfg.track:
         config = OmegaConf.to_container(cfg, resolve=True)
-        config['equivalent_batch_size'] = config['model']['batch_size']['train'] * accelerator.num_processes * \
-                                          cfg.model.accumulation_steps
+        config['equivalent_batch_size'] = config['batch_size']['train'] * accelerator.num_processes * \
+                                          cfg.accumulation_steps
         accelerator.init_trackers(cfg.name, init_kwargs={"wandb": {"config": config}})
         if accelerator.is_main_process:
             tracker: Union[WandBTracker, GeneralTracker] = accelerator.get_tracker('wandb')
@@ -80,7 +80,7 @@ def main(cfg: DictConfig) -> None:
     for split, data in datalist.items():
         accelerator.print(f"{split} has {len(data)} samples")
 
-    model = initiate(cfg.model.network, cfg=cfg, skip=True)
+    model = initiate(cfg.model, cfg=cfg, skip=True)
     if cfg.load:
         model.load_state_dict(torch.load(f"{cfg.save_dir}/{cfg.name}/{cfg.load_tag}/pytorch_model.bin"))
         accelerator.print(f"Ckeckpoint {cfg.save_dir}/{cfg.name}/{cfg.load_tag} loaded")
@@ -92,23 +92,23 @@ def main(cfg: DictConfig) -> None:
         for k, v in datalist.items()
     }
 
-    dataloaders = {k: ThreadDataLoader(v, batch_size=cfg.model.batch_size[k] if k == 'train' else 1,
+    dataloaders = {k: ThreadDataLoader(v, batch_size=cfg.batch_size[k] if k == 'train' else 1,
                                        use_thread_workers=True, buffer_size=cfg.buffer_size)
                    for k, v in datasets.items()}
 
     dataloaders = {k: accelerator.prepare(dataloader, device_placement=[True])
                    for k, dataloader in dataloaders.items()}
 
-    for key, value in cfg.model.scheduler.params.items():
+    for key, value in cfg.scheduler.params.items():
         if isinstance(value, str):
             if '@WARMUP_STEPS' in value:
-                cfg.model.scheduler.params[key] = int(
+                cfg.scheduler.params[key] = int(
                     float(value.replace('@WARMUP_STEPS=', '')) * len(dataloaders['train'])) * cfg.num_epochs
             elif '@TOTAL_STEPS' in value:
-                cfg.model.scheduler.params[key] = len(dataloaders['train']) * cfg.num_epochs
+                cfg.scheduler.params[key] = len(dataloaders['train']) * cfg.num_epochs
 
-    optim = initiate(cfg.model.optimizer, params=model.parameters())
-    scheduler = initiate(cfg.model.scheduler, optimizer=optim)
+    optim = initiate(cfg.optimizer, params=model.parameters())
+    scheduler = initiate(cfg.scheduler, optimizer=optim)
     model, optim, scheduler = accelerator.prepare(model, optim, scheduler, device_placement=[True, True, True])
 
     metrics = {k: CumulativeAverage() for k in ['dice', 'iou', 'loss']}
