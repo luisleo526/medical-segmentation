@@ -20,7 +20,7 @@ debug: False
 track: True
 val_freq: 5
 
-save_freq: 10
+save_freq: 100
 save_dir: ./ckpt
 save_tag: first_try
 
