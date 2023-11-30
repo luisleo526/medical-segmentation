@@ -16,7 +16,7 @@ class SegNet(torch.nn.Module):
             in_channels=cfg.data.in_channels,
             out_channels=num_classes,
             spatial_dims=3,
-            **cfg.model.network.params
+            **cfg.model.params
         )
 
         head_ckpt = f"model/swinvit_{cfg.model.network.params.feature_size}.pth"

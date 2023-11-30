@@ -46,11 +46,11 @@ def aggregate_metrics(split, metrics, targets):
 
 def save_and_upload(accelerator: Accelerator, model, cfg, tag):
     if accelerator.is_main_process:
-        accelerator.save_model(model, f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}-{tag}")
+        accelerator.save_model(model, f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}/{tag}")
         if cfg.track:
-            art = wandb.Artifact(f"{wandb.run.id}-{tag}", type='model',
+            art = wandb.Artifact(f"model-{tag}", type='model',
                                  metadata=OmegaConf.to_container(cfg, resolve=True))
-            art.add_file(f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}-{tag}/pytorch_model.bin")
+            art.add_file(f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}/{tag}/pytorch_model.bin")
 
             tracker: Union[WandBTracker, GeneralTracker] = accelerator.get_tracker('wandb')
             tracker.tracker.log_artifact(art)
@@ -82,8 +82,8 @@ def main(cfg: DictConfig) -> None:
 
     model = initiate(cfg.model, cfg=cfg, skip=True)
     if cfg.load:
-        model.load_state_dict(torch.load(f"{cfg.save_dir}/{cfg.name}/{cfg.load_tag}/pytorch_model.bin"))
-        accelerator.print(f"Ckeckpoint {cfg.save_dir}/{cfg.name}/{cfg.load_tag} loaded")
+        model.load_state_dict(torch.load(f"{cfg.save_dir}/{cfg.name}/{cfg.load_tag}/latest/pytorch_model.bin"))
+        accelerator.print(f"Ckeckpoint {cfg.save_dir}/{cfg.name}/{cfg.load_tag}/latest loaded")
 
     dataset_class = get_class(cfg.dataset.type)
     datasets = {

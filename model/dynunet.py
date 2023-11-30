@@ -44,7 +44,7 @@ class SegNet(torch.nn.Module):
             kernel_size=kernels,
             strides=strides,
             upsample_kernel_size=strides[1:],
-            **cfg.model.network.params
+            **cfg.model.params
         )
         self.loss_fn = DiceCELoss(include_background=False, softmax=True, reduction='mean', to_onehot_y=True)
 
