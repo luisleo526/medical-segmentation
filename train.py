@@ -8,6 +8,7 @@ from typing import Union
 
 import hydra
 import torch
+import wandb
 from accelerate import Accelerator
 from accelerate.tracking import WandBTracker, GeneralTracker
 from monai.data import ThreadDataLoader
@@ -16,7 +17,6 @@ from monai.metrics import CumulativeAverage
 from omegaconf import DictConfig, OmegaConf
 from tqdm import trange
 
-import wandb
 from dataset import load_datalist, get_transforms
 from utils import initiate, to_wandb_images, dice_score, iou_score, get_class
 
@@ -145,6 +145,7 @@ def main(cfg: DictConfig) -> None:
         ############################################################################################
         pbar.set_description("Validating")
         vis_batch = random.randint(0, len(dataloaders['val']) - 1)
+        current_score = 0.0
 
         if epoch % cfg.val_freq == 0:
             model.eval()
@@ -163,13 +164,8 @@ def main(cfg: DictConfig) -> None:
 
             results.update(aggregate_metrics('val', metrics, targets))
 
-            current_score = 0.0
             for target in cfg.data.targets[1:]:
                 current_score += results[f"dice-{target}/val"]
-
-            if current_score > best_dice_sum:
-                best_dice_sum = current_score
-                save_and_upload(accelerator, model, cfg, "best")
 
         ############################################################################################
 
@@ -180,6 +176,10 @@ def main(cfg: DictConfig) -> None:
 
         if epoch % cfg.save_freq == 0:
             save_and_upload(accelerator, model, cfg, "latest")
+
+        if current_score > best_dice_sum:
+            best_dice_sum = current_score
+            save_and_upload(accelerator, model, cfg, "best")
 
         if cfg.debug and epoch > 10:
             break
