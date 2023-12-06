@@ -4,4 +4,4 @@ name=medical_decathlon_task3 \
 model=dynunet optimizer=adam scheduler=warmup_cosine \
 optimizer.params.lr=1.0e-2 \
 batch_size.train=16 batch_size.val=24 accumulation_steps=1 \
-val_freq=10 save_tag=dynunet_task08
+val_freq=10 save_tag=dynunet_task03
