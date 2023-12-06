@@ -1,0 +1,23 @@
+root: /mnt/e/Task03_Liver
+
+train:
+  images: imagesTr/*.nii.gz
+  labels: labelsTr/*.nii.gz
+test:
+  images: imagesTs/*.nii.gz
+
+in_channels: 1
+
+targets:
+  - Background
+  - Liver
+  - Cancer
+
+patch_size: [ 128, 128, 128 ]
+spacing: [ 0.7, 0.7, 1.0 ]
+clip_values: [ -30, 200 ]
+normalize_values: [ 99.40, 39.36 ]
+
+num_samples: 1
+neg_sample_num: 1
+pos_sample_num: 1
