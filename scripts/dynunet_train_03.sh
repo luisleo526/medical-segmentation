@@ -1,4 +1,4 @@
-accelerate launch --num_cpu_threads_per_process 16 train.py \
+accelerate launch --num_cpu_threads_per_process 16 train.py num_workers=16 \
 data=task3 data.root=/workspace/dataset/Task03_Liver \
 name=medical_decathlon_task3 \
 model=dynunet optimizer=sgd scheduler=warmup_cosine \

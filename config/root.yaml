@@ -9,6 +9,7 @@ defaults:
 name: medical_decathlon_task8
 num_epochs: 2000
 buffer_size: 4
+num_workers: 8
 accumulation_steps: 1
 
 batch_size:

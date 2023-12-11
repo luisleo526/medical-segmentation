@@ -20,8 +20,6 @@ from tqdm import trange
 from dataset import load_datalist, get_transforms
 from utils import initiate, to_wandb_images, dice_score, iou_score, get_class
 
-ENTITY = 'luisleo'
-
 
 def compute_metrics(y_pred, y_true, loss, metrics, targets):
     dice = dice_score(y_pred, y_true, len(targets))
@@ -93,7 +91,8 @@ def main(cfg: DictConfig) -> None:
     }
 
     dataloaders = {k: ThreadDataLoader(v, batch_size=cfg.batch_size[k] if k == 'train' else 1,
-                                       use_thread_workers=True, buffer_size=cfg.buffer_size)
+                                       use_thread_workers=True, buffer_size=cfg.buffer_size,
+                                       num_workers=cfg.num_workers)
                    for k, v in datasets.items()}
 
     dataloaders = {k: accelerator.prepare(dataloader, device_placement=[True])

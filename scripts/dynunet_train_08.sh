@@ -1,4 +1,4 @@
-accelerate launch --num_cpu_threads_per_process 16 train.py \
+accelerate launch --num_cpu_threads_per_process 16 train.py num_workers=16 \
 data.root=/workspace/dataset/Task08_HepaticVessel \
 model=dynunet optimizer=sgd scheduler=warmup_cosine \
 optimizer.params.lr=1.0e-2 \
