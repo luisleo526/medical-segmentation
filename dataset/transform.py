@@ -18,7 +18,7 @@ class ReadNumpyArray(MapTransform):
         return self.to_tensor(data)
 
 
-def get_transforms(mode, cfg, device):
+def get_transforms(mode, cfg):
     # mode: train, val, test, selftrain
     if mode != "test":
         keys = ["image", "label"]
@@ -33,8 +33,7 @@ def get_transforms(mode, cfg, device):
     load_transforms = [
         LoadImaged(keys=keys),
         EnsureChannelFirstd(keys=keys),
-        ToTensord(keys=keys),
-        ToDeviced(keys=keys, device=device),
+        ToTensord(keys=keys)
     ]
 
     a_min = (cfg.data.clip_values[0] - cfg.data.normalize_values[0]) / cfg.data.normalize_values[1]

@@ -72,7 +72,7 @@ if __name__ == '__main__':
     model.cuda()
     model.eval()
 
-    transform = get_transforms('test', cfg, torch.device('cuda'))
+    transform = get_transforms('test', cfg)
 
     for image in tqdm(images):
         instance = Path(image).stem.split('.')[0]

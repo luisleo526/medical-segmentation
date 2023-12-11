@@ -88,7 +88,7 @@ def main(cfg: DictConfig) -> None:
     dataset_class = get_class(cfg.dataset.type)
     datasets = {
         k: dataset_class(data=v if not cfg.debug else v[:5],
-                         transform=get_transforms(k, cfg, accelerator.device), **cfg.dataset.params)
+                         transform=get_transforms(k, cfg), **cfg.dataset.params)
         for k, v in datalist.items()
     }
 
