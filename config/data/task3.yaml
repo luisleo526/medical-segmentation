@@ -13,7 +13,7 @@ targets:
   - Liver
   - Cancer
 
-patch_size: [ 128, 128, 128 ]
+patch_size: [ 96, 96, 96 ]
 spacing: [ 0.7, 0.7, 0.7 ]
 clip_values: [ -30, 200 ]
 normalize_values: [ 99.40, 39.36 ]
