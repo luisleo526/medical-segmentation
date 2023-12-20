@@ -1,7 +1,7 @@
 import numpy as np
 from monai.transforms import (CastToTyped, SpatialPadd, RandCropByPosNegLabeld, Compose, CropForegroundd,
-                              EnsureChannelFirstd, LoadImaged, ToDeviced,
-                              RandFlipd, RandGaussianNoised, Spacingd, RandGaussianSmoothd,
+                              EnsureChannelFirstd, LoadImaged, RandFlipd, RandGaussianNoised, Spacingd,
+                              RandGaussianSmoothd,
                               RandScaleIntensityd, ScaleIntensityRanged, NormalizeIntensityd,
                               RandZoomd, ToTensord, EnsureTyped)
 from monai.transforms import MapTransform
@@ -42,13 +42,14 @@ def get_transforms(mode, cfg):
     # 2. sampling (4)
     sample_transforms = [
         Spacingd(keys=keys, pixdim=cfg.data.spacing, mode=spacing_mode, align_corners=spacing_ac),
+        SpatialPadd(keys=keys, spatial_size=cfg.data.patch_size, mode='replicate'),
         CropForegroundd(keys=keys, source_key="image", allow_smaller=False),
         NormalizeIntensityd(keys="image",
                             subtrahend=cfg.data.normalize_values[0],
                             divisor=cfg.data.normalize_values[1]),
         ScaleIntensityRanged(keys="image",
                              a_min=a_min, a_max=a_max,
-                             b_min=0, b_max=1, clip=True),
+                             b_min=0, b_max=1, clip=True)
     ]
 
     # 3. spatial transforms (9)

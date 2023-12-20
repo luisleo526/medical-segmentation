@@ -5,12 +5,12 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
+import wandb
 from monai.inferers import sliding_window_inference
 from omegaconf import OmegaConf
 from tqdm import tqdm
 from uvw import RectilinearGrid, DataArray
 
-import wandb
 from dataset import get_transforms
 from utils import initiate, extract_elements
 
@@ -53,6 +53,7 @@ def parse_args():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--samples', type=int, default=30)
+    parser.add_argument('--overlap', type=float, default=0.7)
     return parser.parse_args()
 
 
@@ -81,7 +82,7 @@ if __name__ == '__main__':
 
         with torch.no_grad():
             pred = sliding_window_inference(inputs=image_tensor, roi_size=cfg.data.patch_size,
-                                            sw_batch_size=args.batch_size, predictor=model, overlap=0.7)
+                                            sw_batch_size=args.batch_size, predictor=model, overlap=args.overlap)
             p_label = pred.argmax(1, keepdim=True).squeeze(0).squeeze(0).cpu().numpy()
 
             uniques = [i for i in range(p_label.shape[-1]) if np.unique(p_label[..., i]).size > 1]

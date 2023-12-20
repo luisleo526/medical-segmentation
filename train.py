@@ -152,7 +152,7 @@ def main(cfg: DictConfig) -> None:
                 with torch.no_grad():
                     pred = sliding_window_inference(inputs=batch['image'], roi_size=cfg.data.patch_size,
                                                     sw_batch_size=cfg.batch_size['val'],
-                                                    predictor=model, overlap=0.7)
+                                                    predictor=model, overlap=cfg.eval_overlap)
                     loss = model(pred, batch['label'])
 
                     compute_metrics(pred.argmax(1, keepdim=True), batch['label'], loss, metrics, targets)
