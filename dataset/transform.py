@@ -58,7 +58,7 @@ def get_transforms(mode, cfg):
     ]
 
     # 3. spatial transforms (9)
-    if mode == "train" or mode == "selftrain":
+    if mode == "train":
         augmentation = [
             RandCropByPosNegLabeld(
                 keys=["image", "label"],
@@ -105,15 +105,6 @@ def get_transforms(mode, cfg):
             CastToTyped(keys=["image", "label"], dtype=(np.float32, np.uint8)),
             EnsureTyped(keys=["image", "label"])
         ]
-
-    if mode != 'train':
-        data_casting = data_casting * 4
-
-    # Summary
-    # 　train: 4 + 4 + 9 + 2 = 19
-    # 　val: 4 + 4 + 2 = 10
-    # 　test: 4 + 4 + 2 = 10
-    # 　selftrain: １ + 9 + 2 = 12
 
     all_transforms = load_transforms + sample_transforms + augmentation + data_casting
 
