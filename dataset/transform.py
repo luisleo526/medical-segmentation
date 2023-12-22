@@ -18,6 +18,20 @@ class ReadNumpyArray(MapTransform):
         return self.to_tensor(data)
 
 
+class ClipNormalize(MapTransform):
+
+    def __init__(self, keys, clip_values, normalize_values):
+        super().__init__(keys)
+        self.clip_values = clip_values
+        self.normalize_values = normalize_values
+
+    def __call__(self, data):
+        for key in self.keys:
+            data[key] = np.clip(data[key], self.clip_values[0], self.clip_values[1])
+            data[key] = (data[key] - self.normalize_values[0]) / self.normalize_values[1]
+        return data
+
+
 def get_transforms(mode, cfg):
     # mode: train, val, test, selftrain
     if mode != "test":
@@ -32,24 +46,15 @@ def get_transforms(mode, cfg):
     # 1. load (4)
     load_transforms = [
         LoadImaged(keys=keys),
-        EnsureChannelFirstd(keys=keys),
-        ToTensord(keys=keys)
+        EnsureChannelFirstd(keys=keys)
     ]
-
-    a_min = (cfg.data.clip_values[0] - cfg.data.normalize_values[0]) / cfg.data.normalize_values[1]
-    a_max = (cfg.data.clip_values[1] - cfg.data.normalize_values[0]) / cfg.data.normalize_values[1]
 
     # 2. sampling (4)
     sample_transforms = [
         Spacingd(keys=keys, pixdim=cfg.data.spacing, mode=spacing_mode, align_corners=spacing_ac),
-        SpatialPadd(keys=keys, spatial_size=cfg.data.patch_size, mode='replicate'),
         CropForegroundd(keys=keys, source_key="image", allow_smaller=False),
-        NormalizeIntensityd(keys="image",
-                            subtrahend=cfg.data.normalize_values[0],
-                            divisor=cfg.data.normalize_values[1]),
-        ScaleIntensityRanged(keys="image",
-                             a_min=a_min, a_max=a_max,
-                             b_min=0, b_max=1, clip=True)
+        ClipNormalize(keys=['image'], clip_values=cfg.data.clip_values, normalize_values=cfg.data.normalize_values),
+        ToTensord(keys=keys)
     ]
 
     # 3. spatial transforms (9)
