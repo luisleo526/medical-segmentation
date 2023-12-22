@@ -51,7 +51,7 @@ def get_transforms(mode, cfg):
     # 2. sampling (4)
     sample_transforms = [
         Spacingd(keys=keys, pixdim=cfg.data.spacing, mode=spacing_mode, align_corners=spacing_ac),
-        SpatialPadd(keys=keys, spatial_size=cfg.data.patch_size, mode='replicate'),
+        SpatialPadd(keys=keys, spatial_size=cfg.data.patch_size),
         CropForegroundd(keys=keys, source_key="image", allow_smaller=False),
         ClipNormalize(keys=['image'], clip_values=cfg.data.clip_values, normalize_values=cfg.data.normalize_values),
         ToTensord(keys=keys),
@@ -69,7 +69,6 @@ def get_transforms(mode, cfg):
                 num_samples=cfg.data.num_samples,
                 image_key="image",
             ),
-            SpatialPadd(keys=keys, spatial_size=cfg.data.patch_size, mode='replicate'),
             RandZoomd(
                 keys=["image", "label"],
                 min_zoom=0.8,
