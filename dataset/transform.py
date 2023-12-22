@@ -68,7 +68,6 @@ def get_transforms(mode, cfg):
                 neg=cfg.data.neg_sample_num,
                 num_samples=cfg.data.num_samples,
                 image_key="image",
-                allow_smaller=True,
             ),
             RandZoomd(
                 keys=["image", "label"],

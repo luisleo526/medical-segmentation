@@ -146,7 +146,7 @@ def main(cfg: DictConfig) -> None:
         vis_batch = random.randint(0, len(dataloaders['val']) - 1)
         current_score = 0.0
 
-        if epoch % cfg.val_freq == 0:
+        if epoch % cfg.val_freq == 0 and epoch > 0:
             model.eval()
             for batch_id, batch in enumerate(dataloaders['val']):
                 with torch.no_grad():
