@@ -18,10 +18,12 @@ def get_transforms(mode, cfg):
         spacing_mode = "bilinear"
         spacing_ac = True
 
-    # 1. load (4)
     load_transforms = [
         LoadImaged(keys=keys),
         EnsureChannelFirstd(keys=keys),
+    ]
+    # 2. sampling
+    sample_transforms = [
         PreprocessAnisotropic(
             keys=keys,
             clip_values=cfg.data.clip_values,
@@ -29,12 +31,11 @@ def get_transforms(mode, cfg):
             normalize_values=cfg.data.normalize_values,
             model_mode=mode,
         ),
-        ToTensord(keys=keys)
+        ToTensord(keys="image"),
     ]
-
-    # 2. spatial transforms (9)
+    # 3. spatial transforms
     if mode == "train":
-        augmentation = [
+        other_transforms = [
             SpatialPadd(keys=["image", "label"], spatial_size=cfg.data.patch_size),
             RandCropByPosNegLabeld(
                 keys=["image", "label"],
@@ -44,6 +45,7 @@ def get_transforms(mode, cfg):
                 neg=cfg.data.neg_sample_num,
                 num_samples=cfg.data.num_samples,
                 image_key="image",
+                image_threshold=0,
             ),
             RandZoomd(
                 keys=["image", "label"],
@@ -65,26 +67,90 @@ def get_transforms(mode, cfg):
             RandFlipd(["image", "label"], spatial_axis=[0], prob=0.5),
             RandFlipd(["image", "label"], spatial_axis=[1], prob=0.5),
             RandFlipd(["image", "label"], spatial_axis=[2], prob=0.5),
-        ]
-    else:
-        augmentation = [SpatialPadd(keys=["image"], spatial_size=cfg.data.patch_size)]
-
-    # 3. data casting (2)
-    if mode == 'test':
-        data_casting = [
-            CastToTyped(keys=["image"], dtype=(np.float32)),
-            EnsureTyped(keys=["image"])
-        ]
-    else:
-        data_casting = [
             CastToTyped(keys=["image", "label"], dtype=(np.float32, np.uint8)),
-            EnsureTyped(keys=["image", "label"])
+            EnsureTyped(keys=["image", "label"]),
+        ]
+    elif mode == "validation":
+        other_transforms = [
+            CastToTyped(keys=["image", "label"], dtype=(np.float32, np.uint8)),
+            EnsureTyped(keys=["image", "label"]),
+        ]
+    else:
+        other_transforms = [
+            CastToTyped(keys=["image"], dtype=(np.float32)),
+            EnsureTyped(keys=["image"]),
         ]
 
-    all_transforms = load_transforms + augmentation + data_casting
-
+    all_transforms = load_transforms + sample_transforms + other_transforms
     return Compose(all_transforms)
-
+    #
+    # # 1. load (4)
+    # load_transforms = [
+    #     LoadImaged(keys=keys),
+    #     EnsureChannelFirstd(keys=keys),
+    #     PreprocessAnisotropic(
+    #         keys=keys,
+    #         clip_values=cfg.data.clip_values,
+    #         pixdim=cfg.data.spacing,
+    #         normalize_values=cfg.data.normalize_values,
+    #         model_mode=mode,
+    #     ),
+    #     ToTensord(keys=keys)
+    # ]
+    #
+    # # 2. spatial transforms (9)
+    # if mode == "train":
+    #     augmentation = [
+    #         SpatialPadd(keys=["image", "label"], spatial_size=cfg.data.patch_size),
+    #         RandCropByPosNegLabeld(
+    #             keys=["image", "label"],
+    #             label_key="label",
+    #             spatial_size=cfg.data.patch_size,
+    #             pos=cfg.data.pos_sample_num,
+    #             neg=cfg.data.neg_sample_num,
+    #             num_samples=cfg.data.num_samples,
+    #             image_key="image",
+    #         ),
+    #         RandZoomd(
+    #             keys=["image", "label"],
+    #             min_zoom=0.9,
+    #             max_zoom=1.2,
+    #             mode=("trilinear", "nearest"),
+    #             align_corners=(True, None),
+    #             prob=0.15,
+    #         ),
+    #         RandGaussianNoised(keys=["image"], std=0.01, prob=0.15),
+    #         RandGaussianSmoothd(
+    #             keys=["image"],
+    #             sigma_x=(0.5, 1.15),
+    #             sigma_y=(0.5, 1.15),
+    #             sigma_z=(0.5, 1.15),
+    #             prob=0.15,
+    #         ),
+    #         RandScaleIntensityd(keys=["image"], factors=0.3, prob=0.15),
+    #         RandFlipd(["image", "label"], spatial_axis=[0], prob=0.5),
+    #         RandFlipd(["image", "label"], spatial_axis=[1], prob=0.5),
+    #         RandFlipd(["image", "label"], spatial_axis=[2], prob=0.5),
+    #     ]
+    # else:
+    #     augmentation = [SpatialPadd(keys=["image"], spatial_size=cfg.data.patch_size)]
+    #
+    # # 3. data casting (2)
+    # if mode == 'test':
+    #     data_casting = [
+    #         CastToTyped(keys=["image"], dtype=(np.float32)),
+    #         EnsureTyped(keys=["image"])
+    #     ]
+    # else:
+    #     data_casting = [
+    #         CastToTyped(keys=["image", "label"], dtype=(np.float32, np.uint8)),
+    #         EnsureTyped(keys=["image", "label"])
+    #     ]
+    #
+    # all_transforms = load_transforms + augmentation + data_casting
+    #
+    # return Compose(all_transforms)
+    #
 
 def resample_image(image, shape, anisotrophy_flag):
     resized_channels = []
