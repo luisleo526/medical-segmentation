@@ -63,3 +63,9 @@ def dice_score(y_pred, y_truth, num_classes):
 def iou_score(y_pred, y_truth, num_classes):
     return torch.nan_to_num(
         torch.cat([compute_iou(y_pred == idx, y_truth == idx, False) for idx in range(num_classes)], dim=-1))
+
+
+def move_bach_to_device(batch, device):
+    for key in batch:
+        batch[key] = batch[key].to(device)
+    return batch

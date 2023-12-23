@@ -19,7 +19,7 @@ from omegaconf import DictConfig, OmegaConf
 from tqdm import trange
 
 from dataset import load_datalist, get_transforms
-from utils import initiate, to_wandb_images, dice_score, iou_score, get_class
+from utils import initiate, to_wandb_images, dice_score, iou_score, get_class, move_bach_to_device
 
 
 def compute_metrics(y_pred, y_true, loss, metrics, targets):
@@ -101,9 +101,6 @@ def main(cfg: DictConfig) -> None:
                                        num_workers=cfg.num_workers)
                    for k, v in datasets.items()}
 
-    dataloaders = {k: accelerator.prepare(dataloader, device_placement=[True])
-                   for k, dataloader in dataloaders.items()}
-
     for key, value in cfg.scheduler.params.items():
         if isinstance(value, str):
             if '@WARMUP_STEPS' in value:
@@ -134,6 +131,7 @@ def main(cfg: DictConfig) -> None:
 
         model.train()
         for batch in dataloaders['train']:
+            batch = move_bach_to_device(batch, accelerator.device)
             with accelerator.accumulate(model):
                 pred, loss = model(batch)
                 accelerator.backward(loss)
@@ -155,6 +153,7 @@ def main(cfg: DictConfig) -> None:
         if epoch % cfg.val_freq == 0 and epoch > 0:
             model.eval()
             for batch_id, batch in enumerate(dataloaders['val']):
+                batch = move_bach_to_device(batch, accelerator.device)
                 with torch.no_grad():
                     pred = sliding_window_inference(inputs=batch['image'], roi_size=cfg.data.patch_size,
                                                     sw_batch_size=cfg.batch_size['val'],
