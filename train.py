@@ -12,6 +12,7 @@ import wandb
 from accelerate import Accelerator
 from accelerate.tracking import WandBTracker, GeneralTracker
 from monai.data import ThreadDataLoader
+from monai.data.utils import partition_dataset
 from monai.inferers import sliding_window_inference
 from monai.metrics import CumulativeAverage
 from omegaconf import DictConfig, OmegaConf
@@ -82,6 +83,11 @@ def main(cfg: DictConfig) -> None:
     if cfg.load:
         model.load_state_dict(torch.load(f"{cfg.save_dir}/{cfg.name}/{cfg.load_tag}/latest/pytorch_model.bin"))
         accelerator.print(f"Ckeckpoint {cfg.save_dir}/{cfg.name}/{cfg.load_tag}/latest loaded")
+
+    # Split datalist
+    datalist = {k: partition_dataset(
+        v, num_partitions=accelerator.num_processes, even_divisible=True, shuffle=True,
+    )[accelerator.process_index] for k, v in datalist.items()}
 
     dataset_class = get_class(cfg.dataset.type)
     datasets = {
