@@ -37,10 +37,12 @@ def get_transforms(mode, cfg):
         keys = ["image", "label"]
         spacing_mode = ("bilinear", "nearest")
         spacing_ac = [True, True]
+        dtype = (np.float32, np.uint8)
     else:
         keys = ["image"]
         spacing_mode = "bilinear"
         spacing_ac = True
+        dtype = (np.float32)
 
     # 1. load (4)
     load_transforms = [
@@ -53,13 +55,13 @@ def get_transforms(mode, cfg):
         Spacingd(keys=keys, pixdim=cfg.data.spacing, mode=spacing_mode, align_corners=spacing_ac),
         CropForegroundd(keys=keys, source_key="image", allow_smaller=False),
         ClipNormalize(keys=['image'], clip_values=cfg.data.clip_values, normalize_values=cfg.data.normalize_values),
-        ToTensord(keys=keys),
+        SpatialPadd(keys=keys, spatial_size=cfg.data.patch_size),
+        ToTensord(keys=keys)
     ]
 
     # 3. spatial transforms (9)
     if mode == "train":
         augmentation = [
-            SpatialPadd(keys=keys, spatial_size=cfg.data.patch_size),
             RandCropByPosNegLabeld(
                 keys=["image", "label"],
                 label_key="label",
@@ -68,6 +70,7 @@ def get_transforms(mode, cfg):
                 neg=cfg.data.neg_sample_num,
                 num_samples=cfg.data.num_samples,
                 image_key="image",
+                image_threshold=-3.5,
             ),
             RandZoomd(
                 keys=["image", "label"],
@@ -93,17 +96,10 @@ def get_transforms(mode, cfg):
     else:
         augmentation = []
 
-    # 4. data casting (2)
-    if mode == 'test':
-        data_casting = [
-            CastToTyped(keys=["image"], dtype=(np.float32)),
-            EnsureTyped(keys=["image"])
-        ]
-    else:
-        data_casting = [
-            CastToTyped(keys=["image", "label"], dtype=(np.float32, np.uint8)),
-            EnsureTyped(keys=["image", "label"])
-        ]
+    data_casting = [
+        CastToTyped(keys=keys, dtype=dtype),
+        EnsureTyped(keys=["image"])
+    ]
 
     all_transforms = load_transforms + sample_transforms + augmentation + data_casting
 
