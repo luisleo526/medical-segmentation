@@ -72,6 +72,7 @@ def get_transforms(mode, cfg):
                 image_key="image",
                 image_threshold=-3.5,
             ),
+            SpatialPadd(keys=keys, spatial_size=cfg.data.patch_size),
             RandZoomd(
                 keys=["image", "label"],
                 min_zoom=0.8,
