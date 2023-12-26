@@ -2,8 +2,9 @@ defaults:
   - data: task8
   - model: dynunet
   - dataset: cache
-  - optimizer: adam
+  - optimizer: sgd
   - scheduler: warmup_cosine
+  - loss: dice_ce
   - _self_
 
 name: medical_decathlon_task8

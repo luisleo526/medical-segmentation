@@ -1,0 +1,7 @@
+type: monai.losses.DiceCELoss
+params:
+  softmax: True
+  to_onehot_y: True
+  include_background: True
+  batch: True
+  reduction: mean

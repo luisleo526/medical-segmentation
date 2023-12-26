@@ -1,6 +1,7 @@
 import torch
-from monai.losses import DiceCELoss
 from monai.networks.nets import DynUNet
+
+from utils import initiate
 
 
 def get_kernels_strides(cfg):
@@ -46,7 +47,8 @@ class SegNet(torch.nn.Module):
             upsample_kernel_size=strides[1:],
             **cfg.model.params
         )
-        self.loss_fn = DiceCELoss(include_background=False, softmax=True, reduction='mean', to_onehot_y=True)
+
+        self.loss_fn = initiate(cfg.loss)
 
     def compute_loss(self, y_pred, y_true):
         pred = torch.unbind(y_pred, dim=1)
