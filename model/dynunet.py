@@ -48,7 +48,7 @@ class SegNet(torch.nn.Module):
             **cfg.model.params
         )
 
-        self.loss_fn = initiate(cfg.loss)
+        self.loss_fn = initiate(cfg.loss_fn)
 
     def compute_loss(self, y_pred, y_true):
         pred = torch.unbind(y_pred, dim=1)
