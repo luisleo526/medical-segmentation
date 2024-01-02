@@ -81,8 +81,8 @@ def main(cfg: DictConfig) -> None:
 
     model = initiate(cfg.model, cfg=cfg, skip=True)
     if cfg.load:
-        model.load_state_dict(torch.load(f"{cfg.save_dir}/{cfg.name}/{cfg.load_tag}/latest/pytorch_model.bin"))
-        accelerator.print(f"Ckeckpoint {cfg.save_dir}/{cfg.name}/{cfg.load_tag}/latest loaded")
+        model.load_state_dict(torch.load(f"{cfg.save_dir}/{cfg.name}/{cfg.load_tag}/best/pytorch_model.bin"))
+        accelerator.print(f"Ckeckpoint {cfg.save_dir}/{cfg.name}/{cfg.load_tag}/best loaded")
 
     # Split datalist
     datalist = {k: partition_dataset(

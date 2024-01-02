@@ -4,11 +4,11 @@ defaults:
   - dataset: cache
   - optimizer: sgd
   - scheduler: warmup_cosine
-  - loss: dice_ce
+  - loss_fn: dice_ce
   - _self_
 
 name: medical_decathlon_task8
-num_epochs: 2000
+num_epochs: 3000
 buffer_size: 4
 num_workers: 8
 accumulation_steps: 1
