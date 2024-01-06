@@ -88,21 +88,22 @@ if __name__ == '__main__':
             uniques = [i for i in range(p_label.shape[-1]) if np.unique(p_label[..., i]).size > 1]
             start_idx = min(uniques)
             end_idx = max(uniques)
+            
+            if end_idx - start_idx > args.samples:
+                for z in extract_elements(range(start_idx, end_idx + 1), args.samples):
+                    img = image_tensor.squeeze(0).squeeze(0).cpu().numpy()[..., z]
+                    H, W = img.shape
+                    img = np.stack([img, img, img], axis=-1)
+                    img = np.uint8(img * 255)
 
-            for z in extract_elements(range(start_idx, end_idx + 1), args.samples):
-                img = image_tensor.squeeze(0).squeeze(0).cpu().numpy()[..., z]
-                H, W = img.shape
-                img = np.stack([img, img, img], axis=-1)
-                img = np.uint8(img * 255)
+                    lab = p_label[..., z]
 
-                lab = p_label[..., z]
+                    img = overlay(img, lab == 1, (255, 0, 0), 0.5)
+                    img = overlay(img, lab == 2, (0, 255, 0), 0.5)
 
-                img = overlay(img, lab == 1, (255, 0, 0), 0.5)
-                img = overlay(img, lab == 2, (0, 255, 0), 0.5)
-
-                filename = f"2d_overlap_{z}.png"
-                filename = args.output / instance / filename
-                cv2.imwrite(str(filename), img)
+                    filename = f"2d_overlap_{z}.png"
+                    filename = args.output / instance / filename
+                    cv2.imwrite(str(filename), img)
 
         nx, ny, nz = p_label.shape
 

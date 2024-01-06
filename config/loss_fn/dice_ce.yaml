@@ -2,6 +2,6 @@ type: monai.losses.DiceCELoss
 params:
   softmax: True
   to_onehot_y: True
-  include_background: True
+  include_background: False
   batch: True
   reduction: mean
