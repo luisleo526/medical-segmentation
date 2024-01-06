@@ -69,8 +69,6 @@ def get_transforms(mode, cfg):
                 pos=cfg.data.pos_sample_num,
                 neg=cfg.data.neg_sample_num,
                 num_samples=cfg.data.num_samples,
-                image_key="image",
-                image_threshold=-3.5,
             ),
             SpatialPadd(keys=keys, spatial_size=cfg.data.patch_size),
             RandZoomd(
