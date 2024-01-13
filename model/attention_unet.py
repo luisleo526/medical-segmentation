@@ -1,7 +1,5 @@
-import os
-
 import torch
-from monai.networks.nets import SwinUNETR
+from monai.networks.nets import AttentionUnet
 
 from utils import initiate
 
@@ -10,20 +8,12 @@ class SegNet(torch.nn.Module):
     def __init__(self, cfg):
         super().__init__()
 
-        num_classes = len(cfg.data.targets)
-
-        self.model = SwinUNETR(
-            img_size=cfg.data.patch_size,
-            in_channels=cfg.data.in_channels,
-            out_channels=num_classes,
+        self.model = AttentionUnet(
             spatial_dims=3,
+            in_channels=cfg.data.in_channels,
+            out_channels=len(cfg.data.targets),
             **cfg.model.params
         )
-
-        head_ckpt = f"model/swinvit_{cfg.model.network.params.feature_size}.pth"
-
-        if cfg.model.network.load_head and os.path.exists(head_ckpt):
-            self.model.swinViT.load_state_dict(torch.load(head_ckpt))
 
         self.loss_fn = initiate(cfg.loss_fn)
 
