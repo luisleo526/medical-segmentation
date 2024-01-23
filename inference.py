@@ -31,10 +31,6 @@ def overlay(image, mask, color, alpha, resize=None):
         image_combined: The combined image. np.ndarray
 
     """
-
-    image = (image - np.min(image)) / (np.max(image) - np.min(image))
-    image = np.uint8(image * 255)
-
     color = color[::-1]
     colored_mask = np.expand_dims(mask, 0).repeat(3, axis=0)
     colored_mask = np.moveaxis(colored_mask, 0, -1)
@@ -72,6 +68,8 @@ if __name__ == '__main__':
     artifact_dir = artifact.download()
     cfg = OmegaConf.create(artifact.metadata)
 
+    mean, std = cfg.data.normalize_values
+
     model = initiate(cfg.model, cfg=cfg, skip=True)
     model.load_state_dict(torch.load(artifact_dir + '/pytorch_model.bin'))
     model.cuda()
@@ -98,7 +96,8 @@ if __name__ == '__main__':
                     img = image_tensor.squeeze(0).squeeze(0).cpu().numpy()[..., z]
                     H, W = img.shape
                     img = np.stack([img, img, img], axis=-1)
-                    img = np.uint8(img * 255)
+                    img = (img * std + mean) * 255
+                    img = img.astype(np.uint8)
 
                     lab = p_label[..., z]
 
