@@ -96,7 +96,8 @@ if __name__ == '__main__':
                     img = image_tensor.squeeze(0).squeeze(0).cpu().numpy()[..., z]
                     H, W = img.shape
                     img = np.stack([img, img, img], axis=-1)
-                    img = (img * std + mean) * 255
+                    img = (img * std + mean)
+                    img = (img - img.min()) / (img.max() - img.min()) * 255
                     img = img.astype(np.uint8)
 
                     lab = p_label[..., z]
