@@ -31,6 +31,10 @@ def overlay(image, mask, color, alpha, resize=None):
         image_combined: The combined image. np.ndarray
 
     """
+
+    image = (image - np.min(image)) / (np.max(image) - np.min(image))
+    image = np.uint8(image * 255)
+
     color = color[::-1]
     colored_mask = np.expand_dims(mask, 0).repeat(3, axis=0)
     colored_mask = np.moveaxis(colored_mask, 0, -1)
@@ -88,7 +92,7 @@ if __name__ == '__main__':
             uniques = [i for i in range(p_label.shape[-1]) if np.unique(p_label[..., i]).size > 1]
             start_idx = min(uniques)
             end_idx = max(uniques)
-            
+
             if end_idx - start_idx > args.samples:
                 for z in extract_elements(range(start_idx, end_idx + 1), args.samples):
                     img = image_tensor.squeeze(0).squeeze(0).cpu().numpy()[..., z]
