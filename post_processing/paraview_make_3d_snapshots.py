@@ -260,4 +260,4 @@ if __name__ == '__main__':
     root = Path(args.input).with_name('3d_view')
     filename = str(root / Path('view.png'))
     SaveAnimation(filename, renderView1, ImageResolution=[1600, 1600],
-        FrameWindow=[0, 119], SuffixFormat='_%02d')
+        FrameWindow=[0, 119], SuffixFormat='_%03d')
