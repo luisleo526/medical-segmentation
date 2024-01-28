@@ -20,9 +20,9 @@ class SegNet(torch.nn.Module):
             **cfg.model.params
         )
 
-        head_ckpt = f"model/swinvit_{cfg.model.network.params.feature_size}.pth"
+        head_ckpt = f"model/swinvit_{cfg.model.params.feature_size}.pth"
 
-        if cfg.model.network.load_head and os.path.exists(head_ckpt):
+        if cfg.model.load_head and os.path.exists(head_ckpt):
             self.model.swinViT.load_state_dict(torch.load(head_ckpt))
 
         self.loss_fn = initiate(cfg.loss_fn)

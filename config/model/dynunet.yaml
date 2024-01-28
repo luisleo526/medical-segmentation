@@ -1,4 +1,5 @@
 type: model.DynUNet
+load_head: True
 params:
   norm_name: INSTANCE
   res_block: false
