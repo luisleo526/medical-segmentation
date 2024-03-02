@@ -28,7 +28,8 @@ save_freq: 100
 save_dir: ./ckpt
 save_tag: first_try
 
-load: False
+load_from_local: False
+load_from_artifact: False
 load_tag: first_try
 
 self_training: False

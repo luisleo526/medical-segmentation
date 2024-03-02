@@ -43,12 +43,13 @@ def aggregate_metrics(split, metrics, targets):
     return results
 
 
-def save_and_upload(accelerator: Accelerator, model, cfg, tag):
+def save_and_upload(accelerator: Accelerator, model, cfg, tag, snapshot):
     if accelerator.is_main_process:
         accelerator.save_model(model, f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}/{tag}")
         if cfg.track:
-            art = wandb.Artifact(f"model-{tag}", type='model',
-                                 metadata=OmegaConf.to_container(cfg, resolve=True))
+            metadata = OmegaConf.to_container(cfg, resolve=True)
+            metadata.update({'snapshot': snapshot})
+            art = wandb.Artifact(f"model-{tag}", type='model', metadata=metadata)
             art.add_file(f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}/{tag}/pytorch_model.bin")
 
             tracker: Union[WandBTracker, GeneralTracker] = accelerator.get_tracker('wandb')
@@ -79,10 +80,22 @@ def main(cfg: DictConfig) -> None:
     for split, data in datalist.items():
         accelerator.print(f"{split} has {len(data)} samples")
 
-    model = initiate(cfg.model, cfg=cfg, skip=True)
-    if cfg.load:
-        model.load_state_dict(torch.load(f"{cfg.save_dir}/{cfg.name}/{cfg.load_tag}/best/pytorch_model.bin"))
-        accelerator.print(f"Ckeckpoint {cfg.save_dir}/{cfg.name}/{cfg.load_tag}/best loaded")
+    model = None
+    last_snapshot = None
+    if cfg.load_from_artifact:
+        api = wandb.Api()
+        artifact = api.artifact(cfg.load_tag, type="model")
+        artifact_dir = artifact.download()
+        _cfg = OmegaConf.create(artifact.metadata)
+        last_snapshot = artifact.metadata['snapshot']
+        model = initiate(_cfg.model, cfg=_cfg, skip=True)
+        model.load_state_dict(torch.load(artifact_dir + '/pytorch_model.bin'))
+        accelerator.print(f"Ckeckpoint {artifact_dir} loaded")
+    else:
+        model = initiate(cfg.model, cfg=cfg, skip=True)
+        if cfg.load_from_local:
+            model.load_state_dict(torch.load(f"{cfg.save_dir}/{cfg.name}/{cfg.load_tag}/best/pytorch_model.bin"))
+            accelerator.print(f"Ckeckpoint {cfg.save_dir}/{cfg.name}/{cfg.load_tag}/best loaded")
 
     # Split datalist
     datalist = {k: partition_dataset(
@@ -120,7 +133,7 @@ def main(cfg: DictConfig) -> None:
     if cfg.self_training:
         total_steps += len(dataloaders['test']) * cfg.num_epochs // cfg.refresh_freq
 
-    best_dice_sum = 0.0
+    best_dice_sum = 0.0 if not last_snapshot else sum([v for k, v in last_snapshot.items() if 'dice' in k])
     pbar = trange(total_steps, disable=not accelerator.is_main_process)
     for epoch in range(cfg.num_epochs):
 
@@ -149,6 +162,7 @@ def main(cfg: DictConfig) -> None:
         pbar.set_description("Validating")
         vis_batch = random.randint(0, len(dataloaders['val']) - 1)
         current_score = 0.0
+        result_snapshot = {}
 
         if epoch % cfg.val_freq == 0 and epoch > 0:
             model.eval()
@@ -171,6 +185,8 @@ def main(cfg: DictConfig) -> None:
 
             for target in cfg.data.targets[1:]:
                 current_score += results[f"dice-{target}/val"]
+                result_snapshot[f"iou-{target}/val"] = results[f"iou-{target}/val"]
+                result_snapshot[f"dice-{target}/val"] = results[f"dice-{target}/val"]
 
         ############################################################################################
 
@@ -179,12 +195,9 @@ def main(cfg: DictConfig) -> None:
                 del results[key]
             accelerator.log(results)
 
-        if epoch % cfg.save_freq == 0:
-            save_and_upload(accelerator, model, cfg, "latest")
-
         if current_score > best_dice_sum:
             best_dice_sum = current_score
-            save_and_upload(accelerator, model, cfg, "best")
+            save_and_upload(accelerator, model, cfg, "best", result_snapshot)
 
         if cfg.debug and epoch > 10:
             break
