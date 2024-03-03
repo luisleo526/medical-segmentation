@@ -85,9 +85,21 @@ def main(cfg: DictConfig) -> None:
     if cfg.load_from_artifact:
         api = wandb.Api()
         artifact = api.artifact(cfg.load_tag, type="model")
-        artifact_dir = artifact.download()
+
+        if accelerator.is_local_main_process:
+            artifact_dir = artifact.download()
+            with open('.artifact_dir', 'w') as f:
+                f.write(artifact_dir)
+
+        accelerator.wait_for_everyone()
+
+        with open('.artifact_dir', 'r') as f:
+            artifact_dir = f.read()
+
         _cfg = OmegaConf.create(artifact.metadata)
-        last_snapshot = artifact.metadata['snapshot']
+        if 'snapshot' in artifact.metadata:
+            last_snapshot = artifact.metadata['snapshot']
+
         model = initiate(_cfg.model, cfg=_cfg, skip=True)
         model.load_state_dict(torch.load(artifact_dir + '/pytorch_model.bin'))
         accelerator.print(f"Ckeckpoint {artifact_dir} loaded")
