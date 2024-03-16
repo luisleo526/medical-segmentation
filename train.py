@@ -53,7 +53,8 @@ def save_and_upload(accelerator: Accelerator, model, cfg, tag, snapshot):
             art.add_file(f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}/{tag}/pytorch_model.bin")
 
             tracker: Union[WandBTracker, GeneralTracker] = accelerator.get_tracker('wandb')
-            tracker.tracker.log_artifact(art)
+            alias = cfg.model.type.split('.')[-1]
+            tracker.tracker.log_artifact(art, aliases=[alias])
 
 
 @hydra.main(config_path="config", config_name="root", version_base="1.3")
@@ -99,6 +100,8 @@ def main(cfg: DictConfig) -> None:
         _cfg = OmegaConf.create(artifact.metadata)
         if 'snapshot' in artifact.metadata:
             last_snapshot = artifact.metadata['snapshot']
+        # Replace CFG.MODEL with the artifact's model
+        cfg.model = _cfg.model
 
         model = initiate(_cfg.model, cfg=_cfg, skip=True)
         model.load_state_dict(torch.load(artifact_dir + '/pytorch_model.bin'))
