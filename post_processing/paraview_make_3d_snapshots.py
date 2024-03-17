@@ -35,6 +35,9 @@ if __name__ == '__main__':
     # get active view
     renderView1 = GetActiveViewOrCreate('RenderView')
 
+    # Set the background color to white
+    renderView1.Background = [1.0, 1.0, 1.0]
+
     # show data in view
     a3D_maskvtrDisplay = Show(a3D_maskvtr, renderView1, 'UniformGridRepresentation')
 
