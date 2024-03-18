@@ -54,6 +54,7 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--samples', type=int, default=30)
     parser.add_argument('--overlap', type=float, default=0.7)
+    parser.add_argument('--store_raw', action='store_true')
     return parser.parse_args()
 
 
@@ -85,6 +86,11 @@ if __name__ == '__main__':
         with torch.no_grad():
             pred = sliding_window_inference(inputs=image_tensor, roi_size=cfg.data.patch_size,
                                             sw_batch_size=args.batch_size, predictor=model, overlap=args.overlap)
+            # store raw prediction
+            if args.store_raw:
+                filepath = args.output / instance / 'raw_prediction.pt'
+                torch.save(pred, filepath)
+
             p_label = pred.argmax(1, keepdim=True).squeeze(0).squeeze(0).cpu().numpy()
 
             uniques = [i for i in range(p_label.shape[-1]) if np.unique(p_label[..., i]).size > 1]
