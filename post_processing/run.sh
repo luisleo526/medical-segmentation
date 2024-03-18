@@ -10,5 +10,5 @@ cd $input_dir/3d_view
 ffmpeg -framerate 12 -i view_%03d.png -vf "palettegen" -y palette.png
 ffmpeg -framerate 12 -loop 0 -i view_%03d.png -i palette.png -filter_complex "paletteuse" -y ../output.gif
 
-cd ..
-rm -rf 3d_view
+# cd ..
+# rm -rf 3d_view

@@ -34,8 +34,14 @@ if __name__ == '__main__':
 
     # get active view
     renderView1 = GetActiveViewOrCreate('RenderView')
+    
+    # Properties modified on renderView1
+    renderView1.UseColorPaletteForBackground = 0
 
-    # Set the background color to white
+    # get the material library
+    materialLibrary1 = GetMaterialLibrary()
+
+    # Properties modified on renderView1
     renderView1.Background = [1.0, 1.0, 1.0]
 
     # show data in view
