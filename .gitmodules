@@ -1,0 +1,3 @@
+[submodule "DropboxUploader"]
+	path = DropboxUploader
+	url = https://github.com/luisleo526/DropboxUploader.git
