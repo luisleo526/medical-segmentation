@@ -89,7 +89,8 @@ if __name__ == '__main__':
             # store raw prediction
             if args.store_raw:
                 filepath = args.output / instance / 'raw_prediction.pt'
-                torch.save(pred, filepath)
+                prob = torch.nn.functional.softmax(pred, dim=1).half()
+                torch.save(prob, filepath)
 
             p_label = pred.argmax(1, keepdim=True).squeeze(0).squeeze(0).cpu().numpy()
 
