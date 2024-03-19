@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import torch
 import wandb
+from monai.data import NibabelWriter
 from monai.inferers import sliding_window_inference
 from omegaconf import OmegaConf
 from tqdm import tqdm
@@ -92,8 +93,15 @@ if __name__ == '__main__':
                 prob = torch.nn.functional.softmax(pred, dim=1).half()
                 torch.save(prob, filepath)
 
-            p_label = pred.argmax(1, keepdim=True).squeeze(0).squeeze(0).cpu().numpy()
+            p_label = pred.argmax(1, keepdim=True).squeeze(0).cpu().numpy()
 
+            # Save label as NIfTI using NibabelWriter
+            writer = NibabelWriter()
+            writer.set_data_array(p_label, channel_dim=0)
+            filename = args.output / instance / instance + "_mask.nii.gz"
+            writer.write(filename)
+
+            p_label = p_label.squeeze(0)
             uniques = [i for i in range(p_label.shape[-1]) if np.unique(p_label[..., i]).size > 1]
             start_idx = min(uniques)
             end_idx = max(uniques)
