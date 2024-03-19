@@ -98,7 +98,8 @@ if __name__ == '__main__':
             # Save label as NIfTI using NibabelWriter
             writer = NibabelWriter()
             writer.set_data_array(p_label, channel_dim=0)
-            filename = args.output / instance / instance + "_mask.nii.gz"
+            filename = instance + "_mask.nii.gz"
+            filename = args.output / instance / filename
             writer.write(filename)
 
             p_label = p_label.squeeze(0)
