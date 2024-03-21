@@ -1,7 +1,8 @@
 import numpy as np
+import torch
 from monai.transforms import (CastToTyped, SpatialPadd, RandCropByPosNegLabeld, Compose, CropForegroundd,
-                              EnsureChannelFirstd, LoadImaged, RandFlipd, RandGaussianNoised, Spacingd,
-                              RandGaussianSmoothd,
+                              LoadImaged, RandFlipd, RandGaussianNoised, Spacingd,
+                              RandGaussianSmoothd, Spacing,
                               RandScaleIntensityd, RandZoomd, ToTensord, EnsureTyped)
 from monai.transforms import MapTransform
 
@@ -46,8 +47,7 @@ def get_transforms(mode, cfg):
 
     # 1. load (4)
     load_transforms = [
-        LoadImaged(keys=keys),
-        EnsureChannelFirstd(keys=keys)
+        LoadImaged(keys=keys, ensure_channel_first=True, image_only=False)
     ]
 
     # 2. sampling (4)
@@ -106,3 +106,21 @@ def get_transforms(mode, cfg):
         all_transforms = [ReadNumpyArray(keys=keys)] + augmentation + data_casting
 
     return Compose(all_transforms)
+
+
+def post_transform(_label, cfg, data):
+    transform = Spacing(
+        pixdim=cfg.data.spacing,
+        mode="nearest",
+        align_corners=True
+    )
+    raw_shape = data['image_meta_dict']['spatial_shape']
+    label = torch.zeros(raw_shape, dtype=torch.uint8).unsqueeze(0)
+    tr_label = transform(label)
+
+    fg_start = data['foreground_start_coord']
+    fg_end = data['foreground_end_coord']
+
+    tr_label[0, fg_start[0]:fg_end[0], fg_start[1]:fg_end[1], fg_start[2]:fg_end[2]] = _label
+
+    return transform.inverse(tr_label)

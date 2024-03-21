@@ -12,7 +12,7 @@ from omegaconf import OmegaConf
 from tqdm import tqdm
 from uvw import RectilinearGrid, DataArray
 
-from dataset import get_transforms
+from dataset import get_transforms, post_transform
 from utils import initiate, extract_elements
 
 
@@ -82,7 +82,8 @@ if __name__ == '__main__':
     for image in tqdm(images):
         instance = Path(image).stem.split('.')[0]
         Path(args.output / instance).mkdir(exist_ok=True, parents=True)
-        image_tensor = transform({'image': image})['image'].unsqueeze(0).cuda()
+        data = transform({'image': image})
+        image_tensor = data['image'].unsqueeze(0).cuda()
 
         with torch.no_grad():
             pred = sliding_window_inference(inputs=image_tensor, roi_size=cfg.data.patch_size,
@@ -93,11 +94,13 @@ if __name__ == '__main__':
                 prob = torch.nn.functional.softmax(pred, dim=1).half()
                 torch.save(prob, filepath)
 
+            # Un-Batch
             p_label = pred.argmax(1, keepdim=True).squeeze(0).cpu().numpy()
 
             # Save label as NIfTI using NibabelWriter
             writer = NibabelWriter()
-            writer.set_data_array(p_label, channel_dim=0)
+            writer.set_data_array(post_transform(p_label, cfg, data), channel_dim=0)
+            writer.set_metadata({"affine": np.eye(4), "original_affine": np.eye(4)})
             filename = instance + "_mask.nii.gz"
             filename = args.output / instance / filename
             writer.write(filename)
