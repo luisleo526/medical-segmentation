@@ -118,6 +118,7 @@ def post_transform(_label, cfg, data):
 
     load_transform = LoadImage(reader='NibabelReader', ensure_channel_first=True, image_only=False)
     img, img_meta = load_transform(data['image_meta_dict']['filename_or_obj'])
+    assert img.shape == data['image'].shape[1:], f"Image shape {img.shape} does not match {data['image'].shape}"
     label = MetaTensor(x=torch.zeros_like(img, dtype=torch.uint8), meta=img.meta)
     tr_label = transform(label)
 
