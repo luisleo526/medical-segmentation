@@ -1,8 +1,9 @@
 import numpy as np
 import torch
+from monai.data import MetaTensor
 from monai.transforms import (CastToTyped, SpatialPadd, RandCropByPosNegLabeld, Compose, CropForegroundd,
                               LoadImaged, RandFlipd, RandGaussianNoised, Spacingd,
-                              RandGaussianSmoothd, Spacing,
+                              RandGaussianSmoothd, Spacing, LoadImage,
                               RandScaleIntensityd, RandZoomd, ToTensord, EnsureTyped)
 from monai.transforms import MapTransform
 
@@ -114,8 +115,10 @@ def post_transform(_label, cfg, data):
         mode="nearest",
         align_corners=True
     )
-    raw_shape = data['image_meta_dict']['spatial_shape'].tolist()
-    label = torch.zeros(raw_shape, dtype=torch.uint8).unsqueeze(0)
+
+    load_transform = LoadImage(reader='NibabelReader', ensure_channel_first=True, image_only=False)
+    img = load_transform(data['image_meta_dict']['filename_or_obj'])
+    label = MetaTensor(x=torch.zeros_like(img), affine=img.affine, meta=img.meta)
     tr_label = transform(label)
 
     fg_start = data['foreground_start_coord']
