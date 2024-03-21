@@ -100,7 +100,7 @@ if __name__ == '__main__':
             # Save label as NIfTI using NibabelWriter
             writer = NibabelWriter()
             writer.set_data_array(post_transform(p_label, cfg, data), channel_dim=0)
-            writer.set_metadata({"affine": np.eye(4), "original_affine": np.eye(4)})
+            writer.set_metadata(data['image_meta_dict'])
             filename = instance + "_mask.nii.gz"
             filename = args.output / instance / filename
             writer.write(filename)
