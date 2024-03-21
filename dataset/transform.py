@@ -121,6 +121,6 @@ def post_transform(_label, cfg, data):
     fg_start = data['foreground_start_coord']
     fg_end = data['foreground_end_coord']
 
-    tr_label[0, fg_start[0]:fg_end[0], fg_start[1]:fg_end[1], fg_start[2]:fg_end[2]] = _label
+    tr_label[..., fg_start[0]:fg_end[0], fg_start[1]:fg_end[1], fg_start[2]:fg_end[2]] = _label
 
     return transform.inverse(tr_label)

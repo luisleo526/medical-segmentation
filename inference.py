@@ -95,7 +95,7 @@ if __name__ == '__main__':
                 torch.save(prob, filepath)
 
             # Un-Batch
-            p_label = pred.argmax(1, keepdim=True).squeeze(0).cpu().numpy()
+            p_label = pred.argmax(1, keepdim=True).squeeze(0).cpu()
 
             # Save label as NIfTI using NibabelWriter
             writer = NibabelWriter()
@@ -105,7 +105,7 @@ if __name__ == '__main__':
             filename = args.output / instance / filename
             writer.write(filename)
 
-            p_label = p_label.squeeze(0)
+            p_label = p_label.squeeze(0).numpy()
             uniques = [i for i in range(p_label.shape[-1]) if np.unique(p_label[..., i]).size > 1]
             start_idx = min(uniques)
             end_idx = max(uniques)
