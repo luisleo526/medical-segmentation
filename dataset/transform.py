@@ -117,8 +117,8 @@ def post_transform(_label, cfg, data):
     )
 
     load_transform = LoadImage(reader='NibabelReader', ensure_channel_first=True, image_only=False)
-    img = load_transform(data['image_meta_dict']['filename_or_obj'])
-    label = MetaTensor(x=torch.zeros_like(img), affine=img.affine, meta=img.meta)
+    img, img_meta = load_transform(data['image_meta_dict']['filename_or_obj'])
+    label = MetaTensor(x=torch.zeros_like(img, dtype=torch.uint8), meta=img.meta)
     tr_label = transform(label)
 
     fg_start = data['foreground_start_coord']
