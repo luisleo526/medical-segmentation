@@ -114,7 +114,7 @@ def post_transform(_label, cfg, data):
         mode="nearest",
         align_corners=True
     )
-    raw_shape = data['image_meta_dict']['spatial_shape']
+    raw_shape = data['image_meta_dict']['spatial_shape'].tolist()
     label = torch.zeros(raw_shape, dtype=torch.uint8).unsqueeze(0)
     tr_label = transform(label)
 
