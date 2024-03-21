@@ -88,24 +88,29 @@ if __name__ == '__main__':
         with torch.no_grad():
             pred = sliding_window_inference(inputs=image_tensor, roi_size=cfg.data.patch_size,
                                             sw_batch_size=args.batch_size, predictor=model, overlap=args.overlap)
-            # store raw prediction
-            if args.store_raw:
-                filepath = args.output / instance / 'raw_prediction.pt'
-                prob = torch.nn.functional.softmax(pred, dim=1).half()
-                torch.save(prob, filepath)
+            prob = torch.nn.functional.softmax(pred, dim=1).half()
 
             # Un-Batch
             p_label = pred.argmax(1, keepdim=True).squeeze(0).cpu()
 
-            # Save label as NIfTI using NibabelWriter
-            writer = NibabelWriter()
-            writer.set_data_array(post_transform(p_label, cfg, data), channel_dim=0)
-            writer.set_metadata(data['image_meta_dict'])
-            filename = instance + "_mask.nii.gz"
-            filename = args.output / instance / filename
-            writer.write(filename)
-
+            # Reverse the spatial transforms
+            p_label_inv = post_transform(p_label, cfg, data)
             p_label = p_label.squeeze(0).numpy()
+
+            if p_label_inv is not None:
+                # Save label as NIfTI using NibabelWriter
+                writer = NibabelWriter()
+                writer.set_data_array(p_label_inv, channel_dim=0)
+                writer.set_metadata(data['image_meta_dict'])
+                filename = instance + "_mask.nii.gz"
+                filename = args.output / instance / filename
+                writer.write(filename)
+
+                # store raw prediction
+                if args.store_raw:
+                    filepath = args.output / instance / 'raw_prediction.pt'
+                    torch.save(prob, filepath)
+
             uniques = [i for i in range(p_label.shape[-1]) if np.unique(p_label[..., i]).size > 1]
             start_idx = min(uniques)
             end_idx = max(uniques)

@@ -124,9 +124,11 @@ def post_transform(_label, cfg, data):
     fg_start = data['foreground_start_coord']
     fg_end = data['foreground_end_coord']
 
-    assert _label.shape[1:] == (fg_end[0] - fg_start[0], fg_end[1] - fg_start[1], fg_end[2] - fg_start[2]), \
-        f"Label shape {_label.shape} does not match with foreground shape {fg_end[0] - fg_start[0], fg_end[1] - fg_start[1], fg_end[2] - fg_start[2]}"
+    try:
+        assert _label.shape[1:] == (fg_end[0] - fg_start[0], fg_end[1] - fg_start[1], fg_end[2] - fg_start[2]), \
+            f"Label shape {_label.shape} does not match with foreground shape {fg_end[0] - fg_start[0], fg_end[1] - fg_start[1], fg_end[2] - fg_start[2]}"
 
-    tr_label[..., fg_start[0]:fg_end[0], fg_start[1]:fg_end[1], fg_start[2]:fg_end[2]] = _label
-
-    return transform.inverse(tr_label)
+        tr_label[..., fg_start[0]:fg_end[0], fg_start[1]:fg_end[1], fg_start[2]:fg_end[2]] = _label
+        return transform.inverse(tr_label)
+    except AssertionError as e:
+        return None
