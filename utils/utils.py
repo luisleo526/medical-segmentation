@@ -30,7 +30,7 @@ def extract_elements(lst, m):
     return lst[::len(lst) // m][:m]
 
 
-def to_wandb_images(y_pred, batch, targets):
+def to_wandb_images(y_pred, batch, targets, slices=30):
     depth = y_pred.shape[-1]
     num_batch = y_pred.shape[0]
     target_batch = random.randint(0, num_batch - 1)
@@ -43,7 +43,7 @@ def to_wandb_images(y_pred, batch, targets):
     end = min(end + 2, depth - 1)
 
     images = []
-    for z in extract_elements(range(start, end + 1), 30):
+    for z in extract_elements(range(start, end + 1), slices):
         image = batch['image'][target_batch, 0, :, :, z].permute(1, 0).cpu().numpy()
         label = batch['label'][target_batch, 0, :, :, z].permute(1, 0).cpu().numpy()
         p_label = y_pred[target_batch, 0, :, :, z].permute(1, 0).cpu().numpy()

@@ -27,8 +27,8 @@ def download_folder(folder, dest_folder):
 
 if __name__ == '__main__':
     client_id = 'v4pc4be3bo81jcwf4f45ayc6d0t3eits'
-    client_secret = 'xAlcWVOClfd7ut6ZguaybzLs5wu9OoUW'
-    access_token = 'aJkW9vgigCtS0fFFoTc3UBBZh1SPtn93'
+    client_secret = 'swfVM2x5BePFbnNvgGsKbPyrrvgiAR23'
+    access_token = '94cwmH8FNJJCNiJdDVFx3xXoGVjUzgPM'
 
     auth = OAuth2(
         client_id=client_id,

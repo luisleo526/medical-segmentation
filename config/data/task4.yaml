@@ -1,0 +1,23 @@
+root: /mnt/e/Task04_Hippocampus
+
+train:
+  images: imagesTr/*.nii.gz
+  labels: labelsTr/*.nii.gz
+test:
+  images: imagesTs/*.nii.gz
+
+in_channels: 1
+
+targets:
+  - Background
+  - Anterior
+  - Posterior
+
+patch_size: [ 64, 64, 64 ]
+spacing: [ 0.75, 0.75, 0.75 ]
+clip_values: [ 0.0, 0.0 ]
+normalize_values: [ 0.0, 0.0 ]
+
+num_samples: 1
+neg_sample_num: 1
+pos_sample_num: 1

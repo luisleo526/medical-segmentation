@@ -24,6 +24,8 @@ debug: False
 track: True
 val_freq: 5
 
+slices_to_show: 30
+
 save_freq: 100
 save_dir: ./ckpt
 save_tag: first_try

@@ -102,7 +102,7 @@ if __name__ == '__main__':
                 writer = NibabelWriter()
                 writer.set_data_array(p_label_inv, channel_dim=0)
                 writer.set_metadata(data['image_meta_dict'])
-                filename = instance + "_mask.nii.gz"
+                filename = instance + ".nii.gz"
                 filename = args.output / instance / filename
                 writer.write(filename)
 

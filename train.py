@@ -193,7 +193,7 @@ def main(cfg: DictConfig) -> None:
                     compute_metrics(pred.argmax(1, keepdim=True), batch['label'], loss, metrics, targets)
 
                 if batch_id == vis_batch and accelerator.is_main_process and cfg.track:
-                    results.update(to_wandb_images(pred.argmax(1, keepdim=True), batch, cfg.data.targets))
+                    results.update(to_wandb_images(pred.argmax(1, keepdim=True), batch, cfg.data.targets, cfg.slices_to_show))
                 pbar.update(1)
 
             results.update(aggregate_metrics('val', metrics, targets))

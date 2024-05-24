@@ -28,8 +28,10 @@ class ClipNormalize(MapTransform):
 
     def __call__(self, data):
         for key in self.keys:
-            data[key] = np.clip(data[key], self.clip_values[0], self.clip_values[1])
-            data[key] = (data[key] - self.normalize_values[0]) / self.normalize_values[1]
+            if self.clip_values[1]  - self.clip_values[0] > 1:
+                data[key] = np.clip(data[key], self.clip_values[0], self.clip_values[1])
+            if self.normalize_values[1] > 0:
+                data[key] = (data[key] - self.normalize_values[0]) / self.normalize_values[1]
         return data
 
 
