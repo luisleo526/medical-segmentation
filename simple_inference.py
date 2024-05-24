@@ -2,19 +2,17 @@ from argparse import ArgumentParser
 from glob import glob
 from pathlib import Path
 
-import cv2
-import numpy as np
 import torch
 import wandb
-from monai.data import NibabelWriter
 from monai.inferers import sliding_window_inference
+from monai.networks.utils import one_hot
+from monailabel.transform.writer import write_seg_nrrd
 from omegaconf import OmegaConf
 from tqdm import tqdm
-from uvw import RectilinearGrid, DataArray
-from monailabel.transform.writer import write_seg_nrrd
-from monai.networks.utils import one_hot
+
 from dataset import get_transforms, post_transform
-from utils import initiate, extract_elements
+from utils import initiate
+
 
 def parse_args():
     parser = ArgumentParser()
@@ -48,7 +46,6 @@ if __name__ == '__main__':
 
     for image in tqdm(images):
         instance = Path(image).stem.split('.')[0]
-        Path(args.output / instance).mkdir(exist_ok=True, parents=True)
         data = transform({'image': image})
         image_tensor = data['image'].unsqueeze(0).cuda()
 
@@ -63,7 +60,7 @@ if __name__ == '__main__':
             # Reverse the spatial transforms
             p_label_inv = post_transform(p_label, cfg, data)
             p_label_inv = one_hot(p_label_inv, len(cfg.data.targets), dim=0)
-            p_label_inv = p_label_inv.cpu().numpy()
+            p_label_inv = p_label_inv.cpu().numpy()[1:]
 
             if p_label_inv is not None:
                 write_seg_nrrd(
@@ -71,5 +68,6 @@ if __name__ == '__main__':
                     f"{str(args.output)}/{instance}.seg.nrrd",
                     p_label_inv.dtype,
                     data['image_meta_dict']['affine'].numpy(),
-                    cfg.data.targets
+                    cfg.data.targets[1:]
                 )
+
