@@ -30,11 +30,12 @@ if __name__ == '__main__':
     images = glob(str(args.data / '*.nii.gz'))
     args.output.mkdir(exist_ok=True, parents=True)
 
-    api = wandb.Api()
+
 
     tasks = []
-    for artifact in args.artifacts:
-        artifact = api.artifact(args.artifact, type="model")
+    for artifact_url in args.artifacts:
+        api = wandb.Api()
+        artifact = api.artifact(artifact_url, type="model")
         artifact_dir = artifact.download()
         cfg = OmegaConf.create(artifact.metadata)
 
