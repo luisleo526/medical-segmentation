@@ -22,9 +22,7 @@ def parse_args():
     parser.add_argument('--data', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--batch_size', type=int, default=8)
-    parser.add_argument('--samples', type=int, default=30)
     parser.add_argument('--overlap', type=float, default=0.7)
-    parser.add_argument('--store_raw', action='store_true')
     return parser.parse_args()
 
 
