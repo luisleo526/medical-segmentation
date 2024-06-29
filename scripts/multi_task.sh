@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=2 python3 multitask_inference.py --artifacts luisleo52655/MSD_task08/model-best:DynUNet luisleo52655/MSD_task03/model-best:DynUNet --output Merged_MSD --data /workspace/dataset/Task08_HepaticVessel/imagesTr/ --merge_cls Cancer Tumour --merge_name combined_tumors
