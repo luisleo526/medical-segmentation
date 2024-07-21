@@ -33,7 +33,7 @@ if __name__ == '__main__':
     args.output.mkdir(exist_ok=True, parents=True)
 
     merge_cls = args.merge_cls
-    merge_cls = [x.lower() for x in merge_cls]
+    merge_cls = [x.lower() for x in merge_cls] if merge_cls is not None else []
 
     tasks = []
     for artifact_url in args.artifacts:

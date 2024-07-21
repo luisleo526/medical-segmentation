@@ -51,22 +51,27 @@ if __name__ == '__main__':
 
         with torch.no_grad():
             pred = sliding_window_inference(inputs=image_tensor, roi_size=cfg.data.patch_size,
-                                            sw_batch_size=args.batch_size, predictor=model, overlap=args.overlap)
+                                                    sw_batch_size=args.batch_size, predictor=model, overlap=args.overlap)
             prob = torch.nn.functional.softmax(pred, dim=1).half()
+            
+            print('pred', pred.shape)
+            print('prob', prob.shape)
 
             # Un-Batch
             p_label = pred.argmax(1, keepdim=True).squeeze(0).cpu()
-
+            print('p_label', p_label.shape)
+            
             # Reverse the spatial transforms
             p_label_inv = post_transform(p_label, cfg, data)
-            p_label_inv = one_hot(p_label_inv, len(cfg.data.targets), dim=0)
+            print('p_label_inv', p_label_inv.shape)
+            p_label_inv = one_hot(p_label_inv, len(cfg.data.targets), dim=0, dtype=torch.uint8)
             p_label_inv = p_label_inv.cpu().numpy()[1:]
 
             if p_label_inv is not None:
                 write_seg_nrrd(
                     p_label_inv,
                     f"{str(args.output)}/{instance}.seg.nrrd",
-                    p_label_inv.dtype,
+                    np.uint8,
                     data['image_meta_dict']['affine'].numpy(),
                     cfg.data.targets[1:]
                 )
