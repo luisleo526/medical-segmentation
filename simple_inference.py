@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 from glob import glob
 from pathlib import Path
 
+import numpy as np
 import torch
 import wandb
 from monai.inferers import sliding_window_inference
@@ -51,16 +52,16 @@ if __name__ == '__main__':
 
         with torch.no_grad():
             pred = sliding_window_inference(inputs=image_tensor, roi_size=cfg.data.patch_size,
-                                                    sw_batch_size=args.batch_size, predictor=model, overlap=args.overlap)
+                                            sw_batch_size=args.batch_size, predictor=model, overlap=args.overlap)
             prob = torch.nn.functional.softmax(pred, dim=1).half()
-            
+
             print('pred', pred.shape)
             print('prob', prob.shape)
 
             # Un-Batch
             p_label = pred.argmax(1, keepdim=True).squeeze(0).cpu()
             print('p_label', p_label.shape)
-            
+
             # Reverse the spatial transforms
             p_label_inv = post_transform(p_label, cfg, data)
             print('p_label_inv', p_label_inv.shape)
@@ -75,4 +76,3 @@ if __name__ == '__main__':
                     data['image_meta_dict']['affine'].numpy(),
                     cfg.data.targets[1:]
                 )
-
