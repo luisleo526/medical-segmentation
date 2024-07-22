@@ -43,7 +43,7 @@ if __name__ == '__main__':
         cfg = OmegaConf.create(artifact.metadata)
 
         model = initiate(cfg.model, cfg=cfg, skip=True)
-        model.load_state_dict(torch.load(artifact_dir + '/pytorch_model.bin'))
+        model.load_state_dict(torch.load(artifact_dir + '/pytorch_model.bin'), strict=False)
         model.cuda()
         model.eval()
 

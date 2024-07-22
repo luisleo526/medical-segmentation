@@ -104,7 +104,7 @@ def main(cfg: DictConfig) -> None:
         cfg.model = _cfg.model
 
         model = initiate(_cfg.model, cfg=_cfg, skip=True)
-        model.load_state_dict(torch.load(artifact_dir + '/pytorch_model.bin'))
+        model.load_state_dict(torch.load(artifact_dir + '/pytorch_model.bin'), strict=False)
         accelerator.print(f"Ckeckpoint {artifact_dir} loaded")
     else:
         model = initiate(cfg.model, cfg=cfg, skip=True)

@@ -5,5 +5,4 @@ monai[all]
 accelerate
 tqdm
 wandb
-boxsdk
-dropbox
+pycad-medic
