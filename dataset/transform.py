@@ -3,7 +3,7 @@ import torch
 from monai.data import MetaTensor
 from monai.transforms import (CastToTyped, SpatialPadd, RandCropByPosNegLabeld, Compose, CropForegroundd,
                               LoadImaged, RandFlipd, RandGaussianNoised, Spacingd,
-                              RandGaussianSmoothd, Spacing, LoadImage,
+                              RandGaussianSmoothd, LoadImage,
                               RandScaleIntensityd, RandZoomd, ToTensord, EnsureTyped)
 from monai.transforms import MapTransform
 
@@ -28,14 +28,14 @@ class ClipNormalize(MapTransform):
 
     def __call__(self, data):
         for key in self.keys:
-            if self.clip_values[1]  - self.clip_values[0] > 1:
+            if self.clip_values[1] - self.clip_values[0] > 1:
                 data[key] = np.clip(data[key], self.clip_values[0], self.clip_values[1])
             if self.normalize_values[1] > 0:
                 data[key] = (data[key] - self.normalize_values[0]) / self.normalize_values[1]
         return data
 
 
-def get_transforms(mode, cfg):
+def get_transforms(mode, cfg, post_only=False):
     # mode: train, val, test, selftrain
     if mode != "test":
         keys = ["image", "label"]
@@ -57,8 +57,14 @@ def get_transforms(mode, cfg):
     sample_transforms = [
         Spacingd(keys=keys, pixdim=cfg.data.spacing, mode=spacing_mode, align_corners=spacing_ac),
         CropForegroundd(keys=keys, source_key="image", allow_smaller=False),
-        ClipNormalize(keys=['image'], clip_values=cfg.data.clip_values, normalize_values=cfg.data.normalize_values),
         SpatialPadd(keys=keys, spatial_size=cfg.data.patch_size),
+    ]
+
+    if post_only:
+        return Compose(sample_transforms)
+
+    sample_transforms += [
+        ClipNormalize(keys=['image'], clip_values=cfg.data.clip_values, normalize_values=cfg.data.normalize_values),
         ToTensord(keys=keys)
     ]
 
@@ -112,25 +118,22 @@ def get_transforms(mode, cfg):
 
 
 def post_transform(_label, cfg, data):
-    transform = Spacing(
-        pixdim=cfg.data.spacing,
-        mode="nearest",
-        align_corners=True
-    )
+    transform = get_transforms('train', cfg, post_only=True)
 
     load_transform = LoadImage(ensure_channel_first=True, image_only=False)
     img, img_meta = load_transform(data['image_meta_dict']['filename_or_obj'])
     label = MetaTensor(x=torch.zeros_like(img, dtype=torch.uint8), meta=img.meta)
-    tr_label = transform(label)
 
+    batch = transform({'image': img, 'label': label})
+    
     fg_start = data['foreground_start_coord']
     fg_end = data['foreground_end_coord']
 
     try:
-        assert _label.shape[1:] == (fg_end[0] - fg_start[0], fg_end[1] - fg_start[1], fg_end[2] - fg_start[2]), \
-            f"Label shape {_label.shape} does not match with foreground shape {fg_end[0] - fg_start[0], fg_end[1] - fg_start[1], fg_end[2] - fg_start[2]}"
+        assert _label.shape == batch['label'].shape, "Wrong shape"
 
-        tr_label[..., fg_start[0]:fg_end[0], fg_start[1]:fg_end[1], fg_start[2]:fg_end[2]] = _label
-        return transform.inverse(tr_label)
+        batch['label'].set_array(_label)
+        inv_batch = transform.inverse(batch)
+        return inv_batch['label']
     except AssertionError as e:
         return None
