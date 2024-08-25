@@ -1,10 +1,12 @@
-root: /mnt/e/Task03_Liver
+root: D:\Task03_Liver\Task03_Liver
 
 train:
-  images: imagesTr/*.nii.gz
-  labels: labelsTr/*.nii.gz
+  images: imagesTr\*.nii.gz
+  labels: labelsTr\*.nii.gz
+  image_extension: nii.gz
+  label_extension: nii.gz
 test:
-  images: imagesTs/*.nii.gz
+  images: imagesTs\*.nii.gz
 
 in_channels: 1
 

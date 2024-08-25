@@ -1,19 +1,20 @@
-root: /mnt/e/Task08_HepaticVessel
+root: D:\Dropbox\Datasets\HepaticVessel
 
 train:
-  images: imagesTr/*.nii.gz
-  labels: labelsTr/*.nii.gz
+  images: images\*.nii.gz
+  labels: labels\*.seg.nrrd
   image_extension: nii.gz
-  label_extension: nii.gz
+  label_extension: seg.nrrd
 test:
-  images: imagesTs/*.nii.gz
+  images: images\*.nii.gz
 
 in_channels: 1
 
 targets:
   - Background
-  - Vessel
-  - Tumour
+  - HepaticVein
+  - HepaticArtery
+  - PortalVein
 
 patch_size: [ 192, 192, 64 ]
 spacing: [ 0.8, 0.8, 1.5 ]

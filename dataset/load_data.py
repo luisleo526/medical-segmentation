@@ -29,9 +29,23 @@ def load_datalist(cfg):
 
     datalist = {'train': [], 'val': [], 'test': []}
 
-    label_path = Path(cfg.data.train.labels).parent
-    datalist['train'] = [{'image': x, 'label': str(label_path / Path(x).name)} for x in images_tr]
-    datalist['val'] = [{'image': x, 'label': str(label_path / Path(x).name)} for x in images_val]
+    label_parent_path = Path(cfg.data.train.labels).parent
+    # datalist['train'] = [{'image': x, 'label': str(label_path / Path(x).name)} for x in images_tr]
+    # datalist['val'] = [{'image': x, 'label': str(label_path / Path(x).name)} for x in images_val]
+
+    for key in ['train', 'val']:
+        for image_path in images_tr:
+            image_filename = Path(image_path).name
+            label_filename = image_filename.replace(cfg.data.train.image_extension, cfg.data.train.label_extension)
+            label_path = label_parent_path / label_filename
+
+            datalist[key].append({'image': image_path, 'label': str(label_path)})
+
     datalist['test'] = [{'image': x} for x in images_ts]
+
+    if cfg.debug:
+        datalist['train'] = datalist['train'][:20]
+        datalist['val'] = datalist['val'][:20]
+        datalist['test'] = datalist['test'][:20]
 
     return datalist

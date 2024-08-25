@@ -3,8 +3,7 @@ import torch
 from monai.data import MetaTensor
 from monai.transforms import (CastToTyped, SpatialPadd, RandCropByPosNegLabeld, Compose, CropForegroundd,
                               LoadImaged, RandFlipd, RandGaussianNoised, Spacingd,
-                              RandGaussianSmoothd, LoadImage,
-                              RandScaleIntensityd, RandZoomd, ToTensord, EnsureTyped)
+                              RandGaussianSmoothd, LoadImage, RandScaleIntensityd, RandZoomd, ToTensord, EnsureTyped)
 from monai.transforms import MapTransform
 
 
@@ -50,7 +49,7 @@ def get_transforms(mode, cfg, post_only=False):
 
     # 1. load (4)
     load_transforms = [
-        LoadImaged(keys=keys, ensure_channel_first=True, image_only=False)
+        LoadImaged(keys=keys, ensure_channel_first=True, image_only=False),
     ]
 
     # 2. sampling (4)
@@ -125,7 +124,7 @@ def post_transform(_label, cfg, data):
     label = MetaTensor(x=torch.zeros_like(img, dtype=torch.uint8), meta=img.meta)
 
     batch = transform({'image': img, 'label': label})
-    
+
     fg_start = data['foreground_start_coord']
     fg_end = data['foreground_end_coord']
 

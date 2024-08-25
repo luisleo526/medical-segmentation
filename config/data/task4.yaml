@@ -3,6 +3,8 @@ root: /mnt/e/Task04_Hippocampus
 train:
   images: imagesTr/*.nii.gz
   labels: labelsTr/*.nii.gz
+  image_extension: nii.gz
+  label_extension: nii.gz
 test:
   images: imagesTs/*.nii.gz
 
