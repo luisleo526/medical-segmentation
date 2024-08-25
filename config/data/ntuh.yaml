@@ -1,12 +1,12 @@
-root: D:\Dropbox\Datasets\HepaticVessel
+root: /root/dataset/NTUH-HepaticVessels
 
 train:
-  images: images\*.nii.gz
-  labels: labels\*.seg.nrrd
+  images: images/*.nii.gz
+  labels: labels/*.seg.nrrd
   image_extension: nii.gz
   label_extension: seg.nrrd
 test:
-  images: images\*.nii.gz
+  images: images/*.nii.gz
 
 in_channels: 1
 
