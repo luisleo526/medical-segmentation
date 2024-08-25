@@ -1,8 +1,6 @@
 from glob import glob
 from pathlib import Path
 
-from monai.data.utils import partition_dataset
-
 
 def load_datalist(cfg):
     root = cfg.data.root
@@ -33,8 +31,8 @@ def load_datalist(cfg):
     # datalist['train'] = [{'image': x, 'label': str(label_path / Path(x).name)} for x in images_tr]
     # datalist['val'] = [{'image': x, 'label': str(label_path / Path(x).name)} for x in images_val]
 
-    for key in ['train', 'val']:
-        for image_path in images_tr:
+    for key, data_list in [('train', images_tr), ('val', images_val)]:
+        for image_path in data_list:
             image_filename = Path(image_path).name
             label_filename = image_filename.replace(cfg.data.train.image_extension, cfg.data.train.label_extension)
             label_path = label_parent_path / label_filename
