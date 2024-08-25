@@ -45,12 +45,13 @@ def aggregate_metrics(split, metrics, targets):
 
 def save_and_upload(accelerator: Accelerator, model, cfg, tag, snapshot):
     if accelerator.is_main_process:
-        accelerator.save_model(model, f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}/{tag}")
+        save_directory = f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}/{tag}"
+        accelerator.save_model(model, save_directory, safe_serialization=False)
         if cfg.track:
             metadata = OmegaConf.to_container(cfg, resolve=True)
             metadata.update({'snapshot': snapshot})
             art = wandb.Artifact(f"model-{tag}", type='model', metadata=metadata)
-            art.add_file(f"{cfg.save_dir}/{cfg.name}/{cfg.save_tag}/{tag}/pytorch_model.bin")
+            art.add_file(f"{save_directory}/pytorch_model.bin")
 
             tracker: Union[WandBTracker, GeneralTracker] = accelerator.get_tracker('wandb')
             alias = cfg.model.type.split('.')[-1]
@@ -193,7 +194,8 @@ def main(cfg: DictConfig) -> None:
                     compute_metrics(pred.argmax(1, keepdim=True), batch['label'], loss, metrics, targets)
 
                 if batch_id == vis_batch and accelerator.is_main_process and cfg.track:
-                    results.update(to_wandb_images(pred.argmax(1, keepdim=True), batch, cfg.data.targets, cfg.slices_to_show))
+                    results.update(
+                        to_wandb_images(pred.argmax(1, keepdim=True), batch, cfg.data.targets, cfg.slices_to_show))
                 pbar.update(1)
 
             results.update(aggregate_metrics('val', metrics, targets))
