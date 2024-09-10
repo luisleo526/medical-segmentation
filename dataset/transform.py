@@ -34,7 +34,7 @@ class ClipNormalize(MapTransform):
         return data
 
 
-def get_transforms(mode, cfg, post_only=False):
+def get_transforms(mode, cfg, post_only=False, no_aug=False):
     # mode: train, val, test, selftrain
     if mode != "test":
         keys = ["image", "label"]
@@ -68,7 +68,7 @@ def get_transforms(mode, cfg, post_only=False):
     ]
 
     # 3. spatial transforms (9)
-    if mode == "train":
+    if mode == "train" and not no_aug:
         augmentation = [
             RandCropByPosNegLabeld(
                 keys=["image", "label"],
