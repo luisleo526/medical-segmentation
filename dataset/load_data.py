@@ -22,7 +22,7 @@ def load_datalist(cfg):
     images_tr = sorted(images_tr)
     images_ts = sorted(images_ts)
 
-    num_of_train = int(len(images_tr) * cfg.val_portion)
+    num_of_train = int(len(images_tr) * (1.0 - cfg.val_portion))
     images_tr, images_val = images_tr[:num_of_train], images_tr[num_of_train:]
 
     datalist = {'train': [], 'val': [], 'test': []}
