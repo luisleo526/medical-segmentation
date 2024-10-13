@@ -13,10 +13,11 @@ def parse_args():
     parser.add_argument('-paths', nargs='+', help='Paths to the label files to process')
     parser.add_argument('-data_root', default='MergeTumor', help='Root directory to save the processed files')
     parser.add_argument('-threads', type=int, default=16, help='Number of threads to use')
+    parser.add_argument('-threshold', type=float, default=0.005, help='Threshold to skip the file')
     return parser.parse_args()
 
 
-def process_image(label_path, data_root='MergeTumor'):
+def process_image(label_path, data_root='MergeTumor', threshold=0.005):
     try:
         nii_img = nib.load(label_path)
         nii_lab = nib.load(label_path.replace('labelsTr', 'imagesTr'))
@@ -36,7 +37,7 @@ def process_image(label_path, data_root='MergeTumor'):
         # Process data if '1' is present
 
         r = data[data == 1].size / data.size
-        if r < 0.005:
+        if r < threshold:
             print(f"Skip {label_path}, ratio: {r}")
             return
 
@@ -64,4 +65,4 @@ if __name__ == '__main__':
 
     # Multiple processes
     with Pool(args.threads) as p:
-        p.map(partial(process_image, data_root=args.data_root), data)
+        p.map(partial(process_image, data_root=args.data_root, threshold=args.threshold), data)
