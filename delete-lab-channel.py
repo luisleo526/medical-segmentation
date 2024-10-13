@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from functools import partial
 from glob import glob
 from multiprocessing import Pool
-from pathlib import Path
+from uuid import uuid4
 
 import nibabel as nib
 
@@ -34,14 +34,13 @@ def process_image(label_path, data_root='MergeTumor'):
         # Create a new NIfTI image with the modified data
         new_nii_img = nib.Nifti1Image(data, affine=nii_img.affine, header=nii_img.header)
 
-        filename = Path(label_path).name
+        filename = str(uuid4()) + '.nii.gz'
 
         # Save the modified image to a new file
         nib.save(new_nii_img, f'{data_root}/labelTr/{filename}')
 
         # Copy the corresponding image file to the new directory, by load and save
         nib.save(nii_lab, f'{data_root}/imageTr/{filename}')
-
 
 
 if __name__ == '__main__':
