@@ -23,6 +23,7 @@ eval_overlap: 0.5
 debug: False
 track: True
 val_freq: 5
+val_portion: 0.2
 
 slices_to_show: 30
 
