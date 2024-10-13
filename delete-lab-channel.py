@@ -11,6 +11,7 @@ def parse_args():
     parser = ArgumentParser(description='Delete the 1st label channel of the MSD dataset')
     parser.add_argument('-paths', nargs='+', help='Paths to the label files to process')
     parser.add_argument('-data_root', default='MergeTumor', help='Root directory to save the processed files')
+    parser.add_argument('-threads', type=int, default=16, help='Number of threads to use')
     return parser.parse_args()
 
 
@@ -30,6 +31,13 @@ def process_image(label_path, data_root='MergeTumor'):
         # Modify the data: set class 1 to 0 and class 2 to 1
         data[data == 1] = 0
         data[data == 2] = 1
+
+        # Process data if '1' is present
+
+        r = data[data == 1].size / data.size
+        if r < 0.005:
+            print(f"Skip {label_path}, ratio: {r}")
+            return
 
         # Create a new NIfTI image with the modified data
         new_nii_img = nib.Nifti1Image(data, affine=nii_img.affine, header=nii_img.header)
@@ -52,5 +60,5 @@ if __name__ == '__main__':
     print("Processing", len(data), "files")
 
     # Multiple processes
-    with Pool(16) as p:
+    with Pool(args.threads) as p:
         p.map(partial(process_image, data_root=args.data_root), data)
