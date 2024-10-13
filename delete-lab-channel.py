@@ -5,6 +5,7 @@ from multiprocessing import Pool
 from uuid import uuid4
 
 import nibabel as nib
+import numpy as np
 
 
 def parse_args():
@@ -38,6 +39,8 @@ def process_image(label_path, data_root='MergeTumor'):
         if r < 0.005:
             print(f"Skip {label_path}, ratio: {r}")
             return
+
+        assert np.unique(data).size == 2, f"Wrong number of classes: {np.unique(data)}"
 
         # Create a new NIfTI image with the modified data
         new_nii_img = nib.Nifti1Image(data, affine=nii_img.affine, header=nii_img.header)
