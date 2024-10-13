@@ -6,3 +6,4 @@ accelerate
 tqdm
 wandb
 pycad-medic
+monailabel

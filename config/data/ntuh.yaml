@@ -1,10 +1,10 @@
-root: /root/dataset/NTUH-HepaticVessels
+root: /root/dataset/vessels-v2
 
 train:
   images: images/*.nii.gz
-  labels: labels/*.seg.nrrd
+  labels: clean_labels/*.nrrd
   image_extension: nii.gz
-  label_extension: seg.nrrd
+  label_extension: nrrd
 test:
   images: images/*.nii.gz
 
@@ -21,6 +21,6 @@ spacing: [ 0.75, 0.75, 0.75 ]
 clip_values: [ -10, 243 ]
 normalize_values: [ 104.37, 52.62 ]
 
-num_samples: 1
+num_samples: 2
 neg_sample_num: 1
 pos_sample_num: 1
