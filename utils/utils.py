@@ -57,7 +57,7 @@ def to_wandb_images(y_pred, batch, targets, slices=30):
 
 def dice_score(y_pred, y_truth, num_classes):
     return torch.nan_to_num(
-        torch.stack([compute_generalized_dice(y_pred == idx, y_truth == idx) for idx in range(num_classes)], dim=-1))
+        torch.cat([compute_generalized_dice(y_pred == idx, y_truth == idx) for idx in range(num_classes)], dim=-1))
 
 
 def iou_score(y_pred, y_truth, num_classes):

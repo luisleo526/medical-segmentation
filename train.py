@@ -17,18 +17,26 @@ from monai.inferers import sliding_window_inference
 from monai.metrics import CumulativeAverage
 from omegaconf import DictConfig, OmegaConf
 from tqdm import trange
+import numpy as np
 
 from dataset import load_datalist, get_transforms
 from utils import initiate, to_wandb_images, dice_score, iou_score, get_class, move_bach_to_device
 
 
-def compute_metrics(y_pred, y_true, loss, metrics, targets):
+def compute_metrics(y_pred, y_true, loss, metrics, targets, debug=False):
     dice = dice_score(y_pred, y_true, len(targets))
     iou = iou_score(y_pred, y_true, len(targets))
+    
+    _loss = loss.detach()
+    _dice = dice.mean(dim=0)
+    _iou = iou.mean(dim=0)
 
-    metrics['loss'].append(loss.detach())
-    metrics['dice'].append(dice.mean(dim=0))
-    metrics['iou'].append(iou.mean(dim=0))
+    metrics['loss'].append(_loss)
+    metrics['dice'].append(_dice)
+    metrics['iou'].append(_iou)
+    
+    if debug:
+        print(_loss, _dice, _iou)
 
 
 def aggregate_metrics(split, metrics, targets):
@@ -38,7 +46,8 @@ def aggregate_metrics(split, metrics, targets):
         if key == 'loss':
             results[f"{key}/{split}"] = float(scores)
         else:
-            results.update({f"{key}-{targets[idx]}/{split}": v for idx, v in enumerate(scores)})
+            for idx in range(len(scores)):
+                results[f"{key}-{targets[idx]}/{split}"] = scores[idx]
         metric.reset()
     return results
 

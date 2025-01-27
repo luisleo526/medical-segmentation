@@ -1,6 +1,6 @@
 from glob import glob
 from pathlib import Path
-
+import random
 
 def load_datalist(cfg):
     root = cfg.data.root
@@ -42,8 +42,8 @@ def load_datalist(cfg):
     datalist['test'] = [{'image': x} for x in images_ts]
 
     if cfg.debug:
-        datalist['train'] = datalist['train'][:20]
-        datalist['val'] = datalist['val'][:20]
-        datalist['test'] = datalist['test'][:20]
+        datalist['train'] = random.choices(datalist['train'], k=5)
+        datalist['val'] = random.choices(datalist['val'], k=5)
+        datalist['test'] = random.choices(datalist['test'], k=5)
 
     return datalist
