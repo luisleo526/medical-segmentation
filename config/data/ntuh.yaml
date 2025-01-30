@@ -11,11 +11,11 @@ test:
 in_channels: 1
 
 targets:
-  - Background
-  - HepaticVein
-  - HepaticArtery
-  - PortalVein
-  - Tumors
+  - Background@0.0
+  - HepaticVein@1.0
+  - HepaticArtery@1.0
+  - PortalVein@1.0
+  - Tumors@2.0
 
 patch_size: [ 192, 192, 64 ]
 spacing: [ 0.75, 0.75, 0.75 ]

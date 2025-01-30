@@ -11,9 +11,9 @@ test:
 in_channels: 1
 
 targets:
-  - Background
-  - Anterior
-  - Posterior
+  - Background@0.0
+  - Anterior@1.0
+  - Posterior@1.0
 
 patch_size: [ 64, 64, 64 ]
 spacing: [ 0.75, 0.75, 0.75 ]

@@ -9,10 +9,10 @@ test:
 in_channels: 4
 
 targets:
-  - background
-  - edema
-  - non-enhancing-tumor
-  - enhancing-tumour
+  - background@0.0
+  - edema@1.0
+  - non-enhancing-tumor@1.0
+  - enhancing-tumour@1.0
 
 patch_size: [ 128, 128, 128 ]
 spacing: [ 1.0, 1.0, 1.0 ]

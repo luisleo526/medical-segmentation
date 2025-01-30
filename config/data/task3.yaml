@@ -11,9 +11,9 @@ test:
 in_channels: 1
 
 targets:
-  - Background
-  - Liver
-  - Cancer
+  - Background@0.0
+  - Liver@1.0
+  - Cancer@1.0
 
 patch_size: [ 128, 128, 128 ]
 spacing: [ 0.77, 0.77, 1 ]

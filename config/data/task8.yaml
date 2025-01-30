@@ -11,9 +11,9 @@ test:
 in_channels: 1
 
 targets:
-  - Background
-  - Vessel
-  - Tumour
+  - Background@0.0
+  - Vessel@1.0
+  - Tumour@1.0
 
 patch_size: [ 192, 192, 64 ]
 spacing: [ 0.8, 0.8, 1.5 ]
