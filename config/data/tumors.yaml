@@ -1,0 +1,24 @@
+root: /root/notebooks/dataset/MergeTumors
+
+train:
+  images: imageTr/*.nii.gz
+  labels: labelTr/*.nii.gz
+  image_extension: nii.gz
+  label_extension: nii.gz
+test:
+  images: imageTr/*.nii.gz
+
+in_channels: 1
+
+targets:
+  - Background
+  - Tumors
+
+patch_size: [ 128, 128, 128 ]
+spacing: [ 0.75, 0.75, 0.75 ]
+clip_values: [ -10, 243 ]
+normalize_values: [ 104.37, 39.62 ]
+
+num_samples: 2
+neg_sample_num: 1
+pos_sample_num: 1
