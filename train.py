@@ -17,7 +17,6 @@ from monai.inferers import sliding_window_inference
 from monai.metrics import CumulativeAverage
 from omegaconf import DictConfig, OmegaConf
 from tqdm import trange
-import numpy as np
 
 from dataset import load_datalist, get_transforms
 from utils import initiate, to_wandb_images, dice_score, iou_score, get_class, move_bach_to_device
@@ -26,7 +25,7 @@ from utils import initiate, to_wandb_images, dice_score, iou_score, get_class, m
 def compute_metrics(y_pred, y_true, loss, metrics, targets, debug=False):
     dice = dice_score(y_pred, y_true, len(targets))
     iou = iou_score(y_pred, y_true, len(targets))
-    
+
     _loss = loss.detach()
     _dice = dice.mean(dim=0)
     _iou = iou.mean(dim=0)
@@ -34,7 +33,7 @@ def compute_metrics(y_pred, y_true, loss, metrics, targets, debug=False):
     metrics['loss'].append(_loss)
     metrics['dice'].append(_dice)
     metrics['iou'].append(_iou)
-    
+
     if debug:
         print(_loss, _dice, _iou)
 
@@ -44,10 +43,10 @@ def aggregate_metrics(split, metrics, targets):
     for key, metric in metrics.items():
         scores = metric.aggregate()
         if key == 'loss':
-            results[f"{key}/{split}"] = float(scores)
+            results[f"{split}:{key}"] = float(scores)
         else:
             for idx in range(len(scores)):
-                results[f"{key}-{targets[idx]}/{split}"] = scores[idx]
+                results[f"{split}:{key}-{targets[idx]}"] = scores[idx]
         metric.reset()
     return results
 
@@ -65,6 +64,13 @@ def save_and_upload(accelerator: Accelerator, model, cfg, tag, snapshot):
             tracker: Union[WandBTracker, GeneralTracker] = accelerator.get_tracker('wandb')
             alias = cfg.model.type.split('.')[-1]
             tracker.tracker.log_artifact(art, aliases=[alias])
+
+
+def get_weights(target_name: str) -> float:
+    values = target_name.split('@')
+    if len(values) == 2:
+        return float(values[1])
+    return 0.0
 
 
 @hydra.main(config_path="config", config_name="root", version_base="1.3")
@@ -115,12 +121,12 @@ def main(cfg: DictConfig) -> None:
 
         model = initiate(_cfg.model, cfg=_cfg, skip=True)
         model.load_state_dict(torch.load(artifact_dir + '/pytorch_model.bin'), strict=False)
-        accelerator.print(f"Ckeckpoint {artifact_dir} loaded")
+        accelerator.print(f"Checkpoint {artifact_dir} loaded")
     else:
         model = initiate(cfg.model, cfg=cfg, skip=True)
         if cfg.load_from_local:
             model.load_state_dict(torch.load(f"{cfg.save_dir}/{cfg.name}/{cfg.load_tag}/best/pytorch_model.bin"))
-            accelerator.print(f"Ckeckpoint {cfg.save_dir}/{cfg.name}/{cfg.load_tag}/best loaded")
+            accelerator.print(f"Checkpoint {cfg.save_dir}/{cfg.name}/{cfg.load_tag}/best loaded")
 
     # Split datalist
     datalist = {k: partition_dataset(
@@ -158,7 +164,8 @@ def main(cfg: DictConfig) -> None:
     if cfg.self_training:
         total_steps += len(dataloaders['test']) * cfg.num_epochs // cfg.refresh_freq
 
-    best_dice_sum = 0.0 if not last_snapshot else sum([v for k, v in last_snapshot.items() if 'dice' in k])
+    last_best_score = 0.0 if not last_snapshot else sum(
+        [v * get_weights(k) for k, v in last_snapshot.items() if 'dice' in k])
     pbar = trange(total_steps, disable=not accelerator.is_main_process)
     for epoch in range(cfg.num_epochs):
 
@@ -205,7 +212,7 @@ def main(cfg: DictConfig) -> None:
                 if batch_id == vis_batch and accelerator.is_main_process and cfg.track:
                     try:
                         _results = to_wandb_images(
-                            pred.argmax(1, keepdim=True), batch, cfg.data.targets, cfg.slices_to_show
+                            pred.argmax(1, keepdim=True), batch, targets, cfg.slices_to_show
                         )
                         results.update(_results)
                     except Exception as e:
@@ -214,20 +221,21 @@ def main(cfg: DictConfig) -> None:
 
             results.update(aggregate_metrics('val', metrics, targets))
 
-            for target in cfg.data.targets[1:]:
-                current_score += results[f"dice-{target}/val"]
-                result_snapshot[f"iou-{target}/val"] = results[f"iou-{target}/val"]
-                result_snapshot[f"dice-{target}/val"] = results[f"dice-{target}/val"]
+            for target in targets:
+                weight = get_weights(target)
+                current_score += results[f"val:dice-{target}"] * weight
+                result_snapshot[f"val:iou-{target}"] = results[f"val:iou-{target}"]
+                result_snapshot[f"val:dice-{target}"] = results[f"val:dice-{target}"]
 
         ############################################################################################
 
         if cfg.track:
-            for key in [x for x in results.keys() if cfg.data.targets[0] in x]:
-                del results[key]
+            # for key in [x for x in results.keys() if targets[0] in x]:
+            #     del results[key]
             accelerator.log(results)
 
-        if current_score > best_dice_sum:
-            best_dice_sum = current_score
+        if current_score > last_best_score:
+            last_best_score = current_score
             save_and_upload(accelerator, model, cfg, "best", result_snapshot)
 
         if cfg.debug and epoch > 10:
