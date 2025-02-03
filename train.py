@@ -19,7 +19,7 @@ from omegaconf import DictConfig, OmegaConf
 from tqdm import trange
 
 from dataset import load_datalist, get_transforms
-from utils import initiate, to_wandb_images, dice_score, iou_score, get_class, move_bach_to_device
+from utils import initiate, to_wandb_images, dice_score, iou_score, get_class, move_bach_to_device, get_weights
 
 
 def compute_metrics(y_pred, y_true, loss, metrics, targets, debug=False):
@@ -64,13 +64,6 @@ def save_and_upload(accelerator: Accelerator, model, cfg, tag, snapshot):
             tracker: Union[WandBTracker, GeneralTracker] = accelerator.get_tracker('wandb')
             alias = cfg.model.type.split('.')[-1]
             tracker.tracker.log_artifact(art, aliases=[alias])
-
-
-def get_weights(target_name: str) -> float:
-    values = target_name.split('@')
-    if len(values) == 2:
-        return float(values[1])
-    return 0.0
 
 
 @hydra.main(config_path="config", config_name="root", version_base="1.3")
@@ -179,6 +172,7 @@ def main(cfg: DictConfig) -> None:
             batch = move_bach_to_device(batch, accelerator.device)
             with accelerator.accumulate(model):
                 pred, loss = model(batch)
+                accelerator.print(loss)
                 accelerator.backward(loss)
                 optim.step()
                 scheduler.step()

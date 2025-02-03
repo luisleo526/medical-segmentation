@@ -70,3 +70,10 @@ def move_bach_to_device(batch, device):
         if torch.is_tensor(batch[key]):
             batch[key] = batch[key].to(device)
     return batch
+
+
+def get_weights(target_name: str) -> float:
+    values = target_name.split('@')
+    if len(values) == 2:
+        return float(values[1])
+    return 0.0

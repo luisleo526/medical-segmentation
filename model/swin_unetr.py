@@ -3,7 +3,7 @@ import os
 import torch
 from monai.networks.nets import SwinUNETR
 
-from utils import initiate
+from utils import initiate, get_weights
 
 
 class SegNet(torch.nn.Module):
@@ -25,7 +25,18 @@ class SegNet(torch.nn.Module):
         if cfg.model.load_head and os.path.exists(head_ckpt):
             self.model.swinViT.load_state_dict(torch.load(head_ckpt))
 
-        self.loss_fn = initiate(cfg.loss_fn)
+        weights = []
+        for target in cfg.data.targets:
+            weights.append(get_weights(target))
+
+        if sum(weights) == 0:
+            weights = None
+        else:
+            weights_max = max(weights)
+            weights = [w / weights_max for w in weights]
+            weights = torch.tensor(weights).float()
+
+        self.loss_fn = initiate(cfg.loss_fn, weight=weights)
 
     def compute_loss(self, y_pred, y_true):
         loss = self.loss_fn(y_pred, y_true)

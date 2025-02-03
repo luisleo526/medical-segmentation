@@ -1,7 +1,7 @@
 import torch
 from monai.networks.nets import DynUNet
 
-from utils import initiate
+from utils import initiate, get_weights
 
 
 def get_kernels_strides(cfg):
@@ -48,7 +48,18 @@ class SegNet(torch.nn.Module):
             **cfg.model.params
         )
 
-        self.loss_fn = initiate(cfg.loss_fn)
+        weights = []
+        for target in cfg.data.targets:
+            weights.append(get_weights(target))
+
+        if sum(weights) == 0:
+            weights = None
+        else:
+            weights_max = max(weights)
+            weights = [w / weights_max for w in weights]
+            weights = torch.tensor(weights).float()
+
+        self.loss_fn = initiate(cfg.loss_fn, weight=weights)
 
     def compute_loss(self, y_pred, y_true):
         pred = torch.unbind(y_pred, dim=1)
