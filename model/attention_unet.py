@@ -15,16 +15,18 @@ class SegNet(torch.nn.Module):
             **cfg.model.params
         )
 
-        weights = []
-        for target in cfg.data.targets:
-            weights.append(get_weights(target))
+#         weights = []
+#         for target in cfg.data.targets:
+#             weights.append(get_weights(target))
 
-        if sum(weights) == 0:
-            weights = None
-        else:
-            weights_max = max(weights)
-            weights = [w / weights_max for w in weights]
-            weights = torch.tensor(weights).float()
+#         if sum(weights) == 0:
+#             weights = None
+#         else:
+#             weights_max = max(weights)
+#             weights = [w / weights_max for w in weights]
+#             weights = torch.tensor(weights).float()
+            
+        weights = None
 
         self.loss_fn = initiate(cfg.loss_fn, weight=weights)
 

@@ -172,7 +172,7 @@ def main(cfg: DictConfig) -> None:
             batch = move_bach_to_device(batch, accelerator.device)
             with accelerator.accumulate(model):
                 pred, loss = model(batch)
-                accelerator.print(loss)
+                # accelerator.print(loss)
                 accelerator.backward(loss)
                 optim.step()
                 scheduler.step()

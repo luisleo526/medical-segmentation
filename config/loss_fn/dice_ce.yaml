@@ -5,5 +5,5 @@ params:
   include_background: False
   batch: True
   reduction: mean
-  lambda_ce: 0.75
-  lambda_dice: 1.25
+  lambda_ce: 1.00
+  lambda_dice: 1.00
